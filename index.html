@@ -309,6 +309,11 @@ a.btn{text-decoration:none}
 <script>
 // Exercise guide: original short instructions (Arabic + English). m = muscles, a/e = steps, ta/te = tip.
 const GUIDE = {
+incline_curl:{m:['الباي (الرأس الطويلة)','Biceps (long head)'],a:['اقعد على بنش مايل 45–60° ودراعاتك مدلدلة لتحت بالدمبلز.','ارفع الدمبلز لكتفك والكوع ثابت مكانه.','نزّل بالراحة لحد ما دراعك يتفرد على الآخر.'],e:['Sit on a bench set to 45–60° with arms hanging straight down holding dumbbells.','Curl the dumbbells up while keeping your elbows still.','Lower slowly to a full stretch.'],ta:'الوضع ده بيفرد الباي أكتر، فابدأ بوزن أخف من الباي العادي.',te:'This position stretches the biceps more, so go lighter than a standing curl.'},
+db_preacher:{m:['الباي','Biceps'],a:['اسند دراعك على مسند البريتشر وامسك الدمبل.','ارفع الدمبل لكتفك.','نزّل بالراحة لحد ما دراعك يتفرد تقريباً.'],e:['Rest one upper arm on the preacher pad holding a dumbbell.','Curl the dumbbell up toward your shoulder.','Lower slowly to near full extension.'],ta:'دراع واحد كل مرة بيخليك تركّز على كل جنب.',te:'One arm at a time lets you focus on each side.'},
+single_pushdown:{m:['التراي','Triceps'],a:['امسك طرف الحبل بإيد واحدة والكوع لازق في جنبك.','افرد دراعك لتحت لحد الآخر.','ارجع لحد مستوى صدرك بالراحة.'],e:['Hold one end of the rope with one hand, elbow pinned to your side.','Extend your arm fully down.','Return to chest height slowly.'],ta:'لف كفك لبرا سنة في آخر الحركة.',te:'Turn your palm slightly outward at the bottom.'},
+cable_rev_fly:{m:['الكتف الخلفي، منتصف الضهر','Rear delts, mid back'],a:['اقف بين البكرتين وهما على مستوى كتفك، وامسك الكابلات متقاطعة قدامك.','افتح دراعاتك لجنب ولورا والكوع مثني سنة.','ارجع بتحكم.'],e:['Stand between pulleys set at shoulder height, cables crossed in front of you.','Open your arms out and back with a slight elbow bend.','Return under control.'],ta:'الوزن خفيف، والحركة من الكتف مش من الضهر.',te:'Keep it light; move from the shoulders, not the back.'},
+seated_leg_press:{m:['الأمامية، الألوية','Quads, glutes'],a:['اقعد وضهرك على المسند ورجلك على المنصة بعرض الكتف.','ادفع المنصة لحد ما رجلك تتفرد من غير ما تقفل الركبة.','ارجع بالراحة لحد ما الركبة تبقى 90° تقريباً.'],e:['Sit with your back on the pad, feet shoulder-width on the plate.','Press until your legs are extended without locking your knees.','Return slowly to about 90° at the knee.'],ta:'وسطك يفضل لازق في الكرسي طول الحركة.',te:'Keep your hips on the seat throughout.'},
 bench:{m:['الصدر، الكتف الأمامي، التراي','Chest, front delts, triceps'],a:['نام على البنش ورجلك ثابتة في الأرض ولوحي كتفك مضمومين لورا.','امسك البار أعرض من كتفك بشوية ونزّله بالراحة لحد منتصف صدرك.','ادفع البار لفوق في خط مستقيم لحد ما دراعك يتفرد.'],e:['Lie on the bench, feet planted, shoulder blades pulled back.','Grip slightly wider than shoulders and lower the bar to mid-chest under control.','Press straight up until your arms are extended.'],ta:'خلّي كوعك زاوية حوالي 45° من جسمك ومتنطّش البار من على صدرك.',te:'Keep elbows around 45° from your body and don’t bounce the bar off your chest.'},
 incline_bb:{m:['أعلى الصدر، الكتف الأمامي، التراي','Upper chest, front delts, triceps'],a:['اظبط البنش على زاوية 30–45°.','نزّل البار لأعلى صدرك تحت الترقوة.','ادفع لفوق وثبّت ضهرك على البنش.'],e:['Set the bench to 30–45°.','Lower the bar to your upper chest, just below the collarbone.','Press up while keeping your back on the bench.'],ta:'الزاوية العالية أوي بتحوّل الشغل على الكتف.',te:'Too steep an angle shifts the work to your shoulders.'},
 decline_bb:{m:['أسفل الصدر، التراي','Lower chest, triceps'],a:['ثبّت رجلك في مسند البنش النازل.','نزّل البار لأسفل صدرك.','ادفع لفوق لحد ما دراعك يتفرد.'],e:['Hook your legs into the decline bench.','Lower the bar to your lower chest.','Press up to full extension.'],ta:'استخدم سبوتر لأن رجوع البار للحامل أصعب في الوضع ده.',te:'Use a spotter; re-racking is harder in this position.'},
@@ -521,7 +526,7 @@ const FP_SLUGS = { bench:'bench-press', incline_bb:'incline-barbell-bench-press'
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '9';
+const APP_VERSION = '10';
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
 const MKEYS = [['weight','kg'],['waist','cm'],['fat','pct'],['chest','cm'],['arm','cm'],['thigh','cm'],['hips','cm']];
@@ -570,6 +575,7 @@ const PRESETS = [
   ['rear_delt','shoulders','dumbbell','رفرفة خلفي','Rear Delt Fly'],
   ['cable_lat','shoulders','cable','رفرفة جانبي كابل','Cable Lateral Raise'],
   ['face_pull','shoulders','cable','فيس بول','Face Pull'],
+  ['cable_rev_fly','shoulders','cable','رفرفة خلفي كابل','Cable Reverse Fly'],
   ['shoulder_m','shoulders','machine','جهاز أكتاف','Machine Shoulder Press'],
   ['pike_pushup','shoulders','bodyweight','ضغط بايك','Pike Push-up'],
   // legs
@@ -584,6 +590,7 @@ const PRESETS = [
   ['step_up','legs','dumbbell','طلوع على بوكس','Step-up'],
   ['kb_swing','legs','kettlebell','كيتل بيل سوينج','Kettlebell Swing'],
   ['leg_press','legs','machine','ليج برس','Leg Press'],
+  ['seated_leg_press','legs','machine','ليج برس قاعد','Seated Leg Press (Machine)'],
   ['hack_squat','legs','machine','هاك سكوات','Hack Squat'],
   ['leg_ext','legs','machine','رجل أمامي','Leg Extension'],
   ['leg_curl','legs','machine','رجل خلفي','Leg Curl'],
@@ -602,9 +609,12 @@ const PRESETS = [
   ['conc_curl','arms','dumbbell','باي تركيز','Concentration Curl'],
   ['oh_ext','arms','dumbbell','تراي دمبل فوق الراس','Overhead Triceps Extension'],
   ['wrist_curl','arms','dumbbell','سواعد','Wrist Curl'],
+  ['incline_curl','arms','dumbbell','باي دمبلز على بنش عالي','Incline Dumbbell Curl'],
+  ['db_preacher','arms','dumbbell','باي ارتكاز بالدمبل','Dumbbell Preacher Curl'],
   ['preacher','arms','machine','باي ارتكاز (بريتشر)','Preacher Curl'],
   ['pushdown','arms','cable','تراي كابل','Triceps Pushdown'],
   ['rope_oh','arms','cable','تراي حبل فوق الراس','Overhead Cable Triceps Extension'],
+  ['single_pushdown','arms','cable','تراي حبل بدراع واحد','Single-Arm Rope Pushdown'],
   ['cable_curl','arms','cable','باي كابل','Cable Curl'],
   ['bench_dips','arms','bodyweight','ديبس على بنش','Bench Dips'],
   // core
@@ -721,6 +731,7 @@ const I18N = {
     muscles:'العضلات', steps:'الخطوات', tip:'نصيحة', fpBtn:'شوف الـ GIF على FitnessProgramer', ytBtn:'فيديو على يوتيوب', noGuide:'مفيش شرح مكتوب للتمرين ده لأنك ضفته بنفسك. استخدم الزراير اللي تحت.',
     fArea:'المنطقة', stretchesFor:n=>`إطالات لـ${n}`,
     a_neck:'الرقبة', a_shoulders:'الأكتاف', a_chest:'الصدر', a_back:'الضهر', a_lowback:'أسفل الضهر', a_arms:'الدراع', a_hips:'الحوض ومثنية الفخذ', a_glutes:'الألوية', a_quads:'الأمامية', a_hamstrings:'الخلفية', a_calves:'السمانة',
+    importRoutinesQ:(n, names)=>`هيتضاف ${n} روتين لروتيناتك: ${names}. لو عندك روتين بنفس الاسم هيتحدّث. جلساتك وإعداداتك مش هتتأثر.`, routinesImported:n=>`اتضاف ${n} روتين`,
     templates:'روتينات جاهزة', addTemplate:'+ أضفه لروتيناتي', templateAdded:'موجود عندك', templateDone:n=>`روتين «${n}» اتضاف`,
     navExercises:'التمارين', exCount:n=>`${n} تمرين`, yourBest:'أحسن أرقامك', addedCustom:'التمرين اتضاف لقايمتك', versionL:n=>`الإصدار ${n}`, updating:'فيه نسخة جديدة، بيتحدّث…',
     navBody:'الجسم', ty_w:'إ', ty_f:'ف', ty_d:'د', tyName_w:'إحماء', tyName_f:'للفشل', tyName_d:'دروب سيت', tyNormal:'مجموعة عادية', setTypeA:'نوع المجموعة',
@@ -787,6 +798,7 @@ const I18N = {
     muscles:'Muscles', steps:'Steps', tip:'Tip', fpBtn:'See the GIF on FitnessProgramer', ytBtn:'YouTube video', noGuide:'No written guide for exercises you added yourself. Use the links below.',
     fArea:'Area', stretchesFor:n=>`Stretches for ${n}`,
     a_neck:'Neck', a_shoulders:'Shoulders', a_chest:'Chest', a_back:'Back', a_lowback:'Lower back', a_arms:'Arms', a_hips:'Hips & hip flexors', a_glutes:'Glutes', a_quads:'Quads', a_hamstrings:'Hamstrings', a_calves:'Calves',
+    importRoutinesQ:(n, names)=>`${n} routines will be added: ${names}. A routine with the same name is updated. Your sessions and settings stay as they are.`, routinesImported:n=>`${n} routines added`,
     templates:'Ready-made routines', addTemplate:'+ Add to my routines', templateAdded:'Already added', templateDone:n=>`Routine “${n}” added`,
     navExercises:'Exercises', exCount:n=>`${n} exercises`, yourBest:'Your best', addedCustom:'Exercise added to your list', versionL:n=>`Version ${n}`, updating:'New version found, updating…',
     navBody:'Body', ty_w:'W', ty_f:'F', ty_d:'D', tyName_w:'Warm-up', tyName_f:'Failure', tyName_d:'Drop set', tyNormal:'Normal set', setTypeA:'Set type',
@@ -1281,12 +1293,6 @@ function exCard(s, it, i) {
   </article>`;
 }
 
-// Ready-made routines the user can copy into their own list.
-const TEMPLATES = [
-  { id:'back_chest', name:'Back & Chest', items:[
-    { exId:'iso_incline_press', sets:3 }, { exId:'tbar_row', sets:3 }, { exId:'bench', sets:3 },
-    { exId:'lat_pd', sets:3 }, { exId:'lying_cable_fly', sets:3 }, { exId:'iliac_pd', sets:3 } ] },
-];
 function viewRoutines() {
   const rs = S.profile.routines;
   return `<div class="view ${S.anim ? 'anim' : ''}"><header class="topbar"><h1>${esc(t('navRoutines'))}</h1>${syncBadge()}</header>
@@ -1295,11 +1301,6 @@ function viewRoutines() {
       <span class="r-ex">${esc(t('exN', r.items.length))} · ${esc(t('setsN', r.items.reduce((a, i) => a + i.sets.length, 0)))}${r.items.length ? ' · ' + esc(r.items.map(i => nameOf(i.exId)).join(SEP())) : ''}</span></button>
       <div class="r-acts"><button class="btn primary sm" data-act="startRoutine" data-id="${esc(r.id)}" ${r.items.length ? '' : 'disabled'}>${esc(t('startR'))}</button><button class="btn sm" data-act="editRoutine" data-id="${esc(r.id)}">${esc(t('edit'))}</button></div></div>`).join('') : `<div class="empty">${esc(t('routinesEmpty'))}</div>`}
     <button class="btn primary block" data-act="newRoutine" ${S.loaded ? '' : 'disabled'}>${esc(t('newRoutine'))}</button>
-    <section class="section"><div class="label">${esc(t('templates'))}</div>
-      ${TEMPLATES.map(tp => { const have = S.profile.routines.some(r => r.name === tp.name); return `<div class="r-card"><span class="r-name">${esc(tp.name)}</span>
-        <span class="r-ex">${esc(t('exN', tp.items.length))} · ${esc(t('setsN', tp.items.reduce((a, i) => a + i.sets, 0)))} · ${esc(tp.items.map(i => nameOf(i.exId)).join(SEP()))}</span>
-        <div class="r-acts"><button class="btn sm" data-act="addTemplate" data-id="${esc(tp.id)}" ${have || !S.loaded ? 'disabled' : ''}>${esc(have ? t('templateAdded') : t('addTemplate'))}</button></div></div>`; }).join('')}
-    </section>
   </div>`;
 }
 function viewRoutineEdit() {
@@ -1661,9 +1662,22 @@ async function doExport() {
   S.exportText = text; render();
   requestAnimationFrame(() => $('#exportBox')?.scrollIntoView({ block:'center' }));
 }
+// A routines file adds routines (a routine with the same name is updated); sessions and settings stay as they are.
+async function importRoutines(d) {
+  const incoming = normalizeProfile({ routines:d.routines.map(r => ({ ...r, id:r.id || newId() })), custom:d.custom || [] });
+  const names = incoming.routines.map(r => r.name).join(SEP());
+  if (!await ask(t('importRoutinesQ', incoming.routines.length, names), t('import'), false)) return;
+  for (const c of incoming.custom) if (!S.profile.custom.some(x => x.id === c.id)) S.profile.custom.push(c);
+  for (const r of incoming.routines) {
+    const i = S.profile.routines.findIndex(x => x.name.trim().toLowerCase() === r.name.trim().toLowerCase());
+    if (i >= 0) S.profile.routines[i] = { ...r, id:S.profile.routines[i].id }; else S.profile.routines.push({ ...r, id:newId() });
+  }
+  saveProfile(); go('routines'); toast(t('routinesImported', incoming.routines.length));
+}
 async function doImport(text) {
   let d;
   try { d = JSON.parse(text); } catch { toast(t('badFile')); return; }
+  if (d && d.app === 'rep-log' && d.type === 'routines' && Array.isArray(d.routines)) return importRoutines(d);
   if (!d || d.app !== 'rep-log' || !Array.isArray(d.sessions)) { toast(t('badFile')); return; }
   const sessions = d.sessions.map(normalizeSession).filter(Boolean);
   if (!await ask(t('importQ', sessions.length), t('import'), false)) return;
@@ -1772,10 +1786,6 @@ document.addEventListener('click', async e => {
       const exId = b.dataset.ex;
       if (b.dataset.v === '') delete S.profile.rest[exId]; else S.profile.rest[exId] = +b.dataset.v;
       saveProfile(); closeSheet(); render(); break; }
-    case 'addTemplate': {
-      const tp = TEMPLATES.find(x => x.id === b.dataset.id); if (!tp) break;
-      S.profile.routines.push({ id:newId(), name:tp.name, items:tp.items.map(i => ({ exId:i.exId, sets:Array.from({ length:i.sets }, emptySet) })) });
-      saveProfile(); render(); toast(t('templateDone', tp.name)); break; }
     case 'newRoutine': S.routineDraft = { id:newId(), name:'', items:[] }; go('routineEdit'); setTimeout(() => $('#rname')?.focus(), 60); break;
     case 'editRoutine': { const r = S.profile.routines.find(r => r.id === b.dataset.id); if (r) { S.routineDraft = clone(r); go('routineEdit'); } break; }
     case 'rAddSet': { const sets = d.items[i].sets; const prev = sets[sets.length - 1]; sets.push({ w:prev ? prev.w : null, r:prev ? prev.r : null }); S.newKey = `r${i}-${sets.length - 1}`; render(); break; }
