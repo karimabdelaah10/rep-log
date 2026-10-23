@@ -260,8 +260,8 @@ button.no:hover{background:var(--surface-2)}
 .ex .ex-head h3{-webkit-user-select:none;user-select:none}
 
 /* how-to sheet */
-.ext-gif{background:#FFFFFF;border-radius:var(--r);box-shadow:var(--shadow);display:flex;justify-content:center;align-items:center;padding:8px;min-height:120px}
-.ext-gif img{width:min(100%, 320px);height:auto;display:block}
+.ext-gif{background:#FFFFFF;border-radius:var(--r);box-shadow:var(--shadow);display:flex;justify-content:center;align-items:center;padding:8px;min-height:120px;flex:none;overflow:hidden}
+.ext-gif img{width:min(100%, 320px);aspect-ratio:1/1;height:auto;display:block;flex:none}
 .ext-gif .btn{display:none}
 .ext-gif.fail img{display:none}
 .ext-gif.fail .btn{display:inline-flex}
@@ -543,7 +543,7 @@ const FP_SLUGS = { bench:'bench-press', incline_bb:'incline-barbell-bench-press'
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '15';
+const APP_VERSION = '16';
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
 const MKEYS = [['weight','kg'],['waist','cm'],['fat','pct'],['chest','cm'],['arm','cm'],['thigh','cm'],['hips','cm']];
