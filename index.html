@@ -57,6 +57,12 @@ button:disabled{cursor:default;opacity:.4}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes pop{0%{transform:scale(.8)}55%{transform:scale(1.18)}100%{transform:scale(1)}}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
+@keyframes backIn{from{transform:translateX(-28%);opacity:.5}to{transform:none;opacity:1}}
+.view.swiping{box-shadow:-10px 0 28px rgb(31 36 51 / .14);background:var(--bg);position:relative;z-index:5}
+.view.back-in{animation:backIn .34s cubic-bezier(.32,.72,0,1)}
+body.edge-drag{overflow:hidden;user-select:none;-webkit-user-select:none}
+.sheet{touch-action:pan-y}
+html,body{overscroll-behavior-x:none}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @keyframes float{50%{transform:translate(-6px,8px) rotate(8deg)}}
 @keyframes pulse{50%{opacity:.35}}
@@ -558,7 +564,7 @@ const EXT_GIFS = { tbar_row:'https://static.exercisedb.dev/media/BgljGjd.gif' };
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '23';
+const APP_VERSION = '24';
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
 const MKEYS = [['weight','kg'],['waist','cm'],['fat','pct'],['chest','cm'],['arm','cm'],['thigh','cm'],['hips','cm']];
@@ -1208,11 +1214,62 @@ function openSheet(title, bodyHTML, onMount) {
   sheetEl.querySelector('h2').textContent = title;
   sheetEl.addEventListener('click', e => { if (e.target === sheetEl) userCloseSheet(); });
   $('#layer').appendChild(sheetEl);
+  attachSheetDrag(sheetEl);
   onMount && onMount(sheetEl);
 }
 function closeSheet() { if (sheetEl) { sheetEl.remove(); sheetEl = null; } }
 // Closed by the person (X or tapping outside): a how-to opened from the picker goes back to the picker.
-function userCloseSheet() { const back = sheetEl && sheetEl._onClose; closeSheet(); if (back) back(); }
+const reduceMotion = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+const IOS_EASE = 'cubic-bezier(.32,.72,0,1)';
+function userCloseSheet() {
+  if (!sheetEl || sheetEl._closing) return;
+  const el = sheetEl, back = el._onClose, sh = el.querySelector('.sheet');
+  el._closing = true;
+  const done = () => { if (sheetEl === el) closeSheet(); else el.remove(); if (back) back(); };
+  if (reduceMotion() || !sh) { done(); return; }
+  sh.style.animation = 'none';
+  sh.style.transition = `transform .28s ${IOS_EASE}`; sh.style.transform = 'translateY(105%)';
+  el.style.transition = 'background-color .28s ease'; el.style.backgroundColor = 'transparent';
+  setTimeout(done, 270);
+}
+// iOS-style: drag a sheet down to dismiss it (from the handle/header, or from the content when it is scrolled to the top).
+function attachSheetDrag(scrim) {
+  const sh = scrim.querySelector('.sheet'), body = sh.querySelector('.sheet-body');
+  const g = { on:false, decided:true, y0:0, x0:0, dy:0, vel:0, ly:0, lt:0 };
+  sh.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1 || scrim._closing) { g.decided = true; g.on = false; return; }
+    const tc = e.touches[0];
+    Object.assign(g, { on:false, decided:false, y0:tc.clientY, x0:tc.clientX, dy:0, vel:0, ly:tc.clientY, lt:e.timeStamp, inBody:body.contains(e.target), top:body.scrollTop });
+  }, { passive:true });
+  sh.addEventListener('touchmove', e => {
+    if (g.decided && !g.on) return;
+    const tc = e.touches[0];
+    if (!g.decided) {
+      const mx = tc.clientX - g.x0, my = tc.clientY - g.y0;
+      if (Math.abs(mx) < 6 && Math.abs(my) < 6) return;
+      g.decided = true;
+      g.on = my > 0 && Math.abs(my) > Math.abs(mx) && (!g.inBody || (g.top <= 0 && body.scrollTop <= 0));
+      if (!g.on) return;
+      g.y0 = tc.clientY; sh.style.animation = 'none'; sh.style.transition = 'none'; scrim.style.transition = 'none';
+    }
+    e.preventDefault();
+    const raw = tc.clientY - g.y0;
+    g.dy = raw > 0 ? raw : raw / 4;   // a little resistance when pulled up
+    const dt = e.timeStamp - g.lt; if (dt > 0) g.vel = .7 * g.vel + .3 * ((tc.clientY - g.ly) / dt);
+    g.ly = tc.clientY; g.lt = e.timeStamp;
+    sh.style.transform = `translateY(${g.dy}px)`;
+    const k = Math.max(0, Math.min(1, g.dy / (sh.offsetHeight || 1)));
+    scrim.style.backgroundColor = `rgb(31 36 51 / ${(.35 * (1 - k)).toFixed(3)})`;
+  }, { passive:false });
+  const end = () => {
+    if (!g.on) { g.decided = true; return; }
+    g.on = false; g.decided = true;
+    if (g.dy > sh.offsetHeight * .25 || g.vel > .5) { userCloseSheet(); return; }
+    sh.style.transition = `transform .32s ${IOS_EASE}`; sh.style.transform = '';
+    scrim.style.transition = 'background-color .32s ease'; scrim.style.backgroundColor = '';
+  };
+  sh.addEventListener('touchend', end); sh.addEventListener('touchcancel', end);
+}
 function applyLang() { document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr'; }
 
 /* ---------- views ---------- */
@@ -1297,7 +1354,7 @@ function viewSession() {
   const live = !s.endedAt;
   return `<div class="view ${S.anim ? 'anim' : ''}">
     <header class="topbar">
-      <button class="iconbtn" data-act="leaveSession" aria-label="${esc(t('back'))}">${ICON.back}</button>
+      <button class="iconbtn" data-act="leaveSession" data-back aria-label="${esc(t('back'))}">${ICON.back}</button>
       <div class="t-main"><div class="t-title">${esc(s.routineName || t('freeSession'))}</div>
         <div class="t-sub">${esc(fmtDate(s.startedAt, { weekday:'short', day:'numeric', month:'short' }))} · <span id="elapsed">${esc(hmm((live ? Date.now() : s.endedAt) - s.startedAt))}</span></div></div>
       ${live ? `<button class="btn primary sm" data-act="finish">${esc(t('finish'))}</button>` : `<button class="btn sm" data-act="leaveSession">${esc(t('done'))}</button>`}
@@ -1373,7 +1430,7 @@ function viewRoutineEdit() {
     </article>`;
   }).join('');
   return `<div class="view ${S.anim ? 'anim' : ''}">
-    <header class="topbar"><button class="iconbtn" data-act="nav" data-v="routines" aria-label="${esc(t('back'))}">${ICON.back}</button>
+    <header class="topbar"><button class="iconbtn" data-act="nav" data-v="routines" data-back aria-label="${esc(t('back'))}">${ICON.back}</button>
       <div class="t-main"><div class="t-title">${esc(exists ? t('editRoutine') : t('createRoutine'))}</div></div>
       <button class="btn primary sm" data-act="saveRoutine">${esc(t('save'))}</button></header>
     <label class="field"><span class="label">${esc(t('routineName'))}</span><input class="input" id="rname" data-f="rname" value="${esc(d.name)}" placeholder="${esc(t('routineNamePh'))}" autocomplete="off"></label>
@@ -1931,6 +1988,56 @@ document.addEventListener('change', e => {
   }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetEl) closeSheet(); });
+/* iOS-style back: swipe from the left edge to the right */
+function backAction() {
+  const done = $('#app [data-act="reorderDone"]'); if (done) return () => done.click();
+  const b = $('#app [data-back]'); if (b) return () => b.click();
+  if (S.view !== 'home') return () => go('home');
+  return null;
+}
+const eb = { on:false, track:false, decided:false, x0:0, y0:0, dx:0, vel:0, lx:0, lt:0, el:null, act:null };
+document.addEventListener('touchstart', e => {
+  eb.track = false;
+  if (e.touches.length !== 1 || sheetEl || document.querySelector('.scrim') || drag.on) return;
+  const tc = e.touches[0]; if (tc.clientX > 24) return;
+  if (e.target.closest('.ro-item, input[type="range"]')) return;
+  const act = backAction(); if (!act) return;
+  Object.assign(eb, { track:true, on:false, decided:false, x0:tc.clientX, y0:tc.clientY, dx:0, vel:0, lx:tc.clientX, lt:e.timeStamp, act });
+}, { passive:true });
+document.addEventListener('touchmove', e => {
+  if (!eb.track) return;
+  const tc = e.touches[0];
+  if (!eb.decided) {
+    const mx = tc.clientX - eb.x0, my = tc.clientY - eb.y0;
+    if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
+    eb.decided = true;
+    if (!(mx > 0 && Math.abs(mx) > Math.abs(my) * 1.2)) { eb.track = false; return; }
+    eb.el = $('#app .view'); if (!eb.el) { eb.track = false; return; }
+    eb.on = true; eb.x0 = tc.clientX;
+    lp.on = false; clearTimeout(lp.t); lpc.on = false; clearTimeout(lpc.t);
+    eb.el.classList.remove('anim', 'back-in'); eb.el.classList.add('swiping'); eb.el.style.transition = 'none';
+    document.body.classList.add('edge-drag');
+  }
+  e.preventDefault();
+  eb.dx = Math.max(0, tc.clientX - eb.x0);
+  const dt = e.timeStamp - eb.lt; if (dt > 0) eb.vel = .7 * eb.vel + .3 * ((tc.clientX - eb.lx) / dt);
+  eb.lx = tc.clientX; eb.lt = e.timeStamp;
+  eb.el.style.transform = `translateX(${eb.dx}px)`;
+}, { passive:false });
+function endEdge() {
+  if (!eb.on) { eb.track = false; return; }
+  const el = eb.el, act = eb.act, go_ = eb.dx > window.innerWidth * .33 || (eb.vel > .45 && eb.dx > 30);
+  eb.on = eb.track = false;
+  const clean = () => { el.classList.remove('swiping'); el.style.transform = ''; el.style.transition = ''; document.body.classList.remove('edge-drag'); };
+  if (!go_) { el.style.transition = `transform .3s ${IOS_EASE}`; el.style.transform = ''; setTimeout(clean, 300); return; }
+  el.style.transition = `transform .24s ${IOS_EASE}`; el.style.transform = 'translateX(100%)';
+  setTimeout(() => {
+    clean(); act();
+    const nv = $('#app .view'); if (nv && !reduceMotion()) { nv.classList.remove('anim'); nv.classList.add('back-in'); setTimeout(() => nv.classList.remove('back-in'), 360); }
+  }, 230);
+}
+document.addEventListener('touchend', endEdge); document.addEventListener('touchcancel', endEdge);
+
 /* long-press on a session row opens its actions */
 const lp = { t:0, fired:false, x:0, y:0, on:false };
 function sessionActions(id) {
