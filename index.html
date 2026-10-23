@@ -250,6 +250,10 @@ button.no:hover{background:var(--surface-2)}
 .mrow .iconbtn svg{width:18px;height:18px}
 
 /* how-to sheet */
+.fig{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:6px 10px 10px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.fig svg{width:100%;max-width:300px;height:auto;display:block}
+.fig .legend{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.fig .legend i{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
 .guide-steps{margin:0;padding-inline-start:22px;display:flex;flex-direction:column;gap:8px;line-height:1.6}
 .guide-tip{background:var(--accent-soft);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:14px}
 .guide-links{display:flex;flex-direction:column;gap:8px}
@@ -416,6 +420,87 @@ s_wgs:{m:['الحوض، الخلفية، الصدر','Hips, hamstrings, thoracic
 s_hang:{m:['الضهر، الكتف، القبضة','Back, shoulders, grip'],a:['اتعلّق في العقلة ودراعك مفرود.','سيب جسمك يرتخي.','اثبت.'],e:['Hang from the bar with straight arms.','Let your body relax.','Hold.'],ta:'بيفك الضهر ويقوّي القبضة.',te:'Decompresses the spine and builds grip.'},
 s_band_shoulder:{m:['الكتف، الصدر','Shoulders, chest'],a:['امسك الأستك واسع قدامك.','لفّه فوق راسك لورا ودراعك مفرود.','ارجع لقدام.'],e:['Hold a band wide in front of you.','Arc it overhead and behind you, arms straight.','Bring it back.'],ta:'وسّع المسكة لو حسيت بضغط.',te:'Widen your grip if it feels tight.'},
 };
+// Original animated exercise figures: a side-view rig driven by joint angles.
+// Angles are degrees from straight up; positive turns toward the figure's front (+x).
+const FIG_L = { shin:60, thigh:62, torso:70, neck:8, head:14, upper:40, fore:38 };
+const FIGURES = {
+  squat: {
+    hl:['quads','glutes'], prop:'barbell',
+    from:{ shin:0,  thigh:0,   torso:3,  arm:35, elbow:152 },
+    to:  { shin:32, thigh:-80, torso:42, arm:35, elbow:152 },
+    down:1.3, hold:0.35, up:1.0, rest:0.7,
+  },
+};
+function figDir(a) { const r = a * Math.PI / 180; return [Math.sin(r), -Math.cos(r)]; }
+function figAdd(p, a, len) { const d = figDir(a); return [p[0] + d[0] * len, p[1] + d[1] * len]; }
+function figIK(S, H, l1, l2, pref) {
+  const dx = H[0] - S[0], dy = H[1] - S[1];
+  let d = Math.hypot(dx, dy); d = Math.min(Math.max(d, Math.abs(l1 - l2) + 0.01), l1 + l2 - 0.01);
+  const ux = dx / (Math.hypot(dx, dy) || 1), uy = dy / (Math.hypot(dx, dy) || 1);
+  const a = (l1 * l1 - l2 * l2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
+  const bx = S[0] + ux * a, by = S[1] + uy * a;
+  const c1 = [bx - uy * h, by + ux * h], c2 = [bx + uy * h, by - ux * h];
+  const score = c => (c[0] - S[0]) * pref[0] + (c[1] - S[1]) * pref[1];
+  return score(c1) >= score(c2) ? c1 : c2;
+}
+function figPose(def, t) {
+  const L = FIG_L, A = {};
+  for (const k in def.from) A[k] = def.from[k] + (def.to[k] - def.from[k]) * t;
+  const ankle = [150, 262];
+  const knee = figAdd(ankle, A.shin, L.shin);
+  const hip = figAdd(knee, A.thigh, L.thigh);
+  const shoulder = figAdd(hip, A.torso, L.torso);
+  const head = figAdd(shoulder, A.torso, L.neck + L.head);
+  let hand, elbow, bar = null;
+  if (def.prop === 'barbell') {
+    // bar rests on the upper back; hands hold it, elbows solved to point down and back
+    bar = figAdd(figAdd(shoulder, A.torso - 90, 11), A.torso, -4);
+    hand = bar;
+    elbow = figIK(shoulder, hand, L.upper, L.fore, figDir(A.torso + 180 + 45));
+  } else {
+    const ua = A.torso + 180 + A.arm;
+    elbow = figAdd(shoulder, ua, L.upper);
+    hand = figAdd(elbow, ua + A.elbow, L.fore);
+  }
+  return { ankle, knee, hip, shoulder, head, elbow, hand, bar, A };
+}
+// colors: { body, far, accent, prop, floor }
+function figureSVG(id, t, C) {
+  const def = FIGURES[id]; if (!def) return '';
+  const P = figPose(def, t), f = n => n.toFixed(1);
+  const seg = (a, b, w, col, extra = '') => `<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(b[0])}" y2="${f(b[1])}" stroke="${col}" stroke-width="${w}" stroke-linecap="round" ${extra}/>`;
+  const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+  const off = [-5, -3]; const sh = p => [p[0] + off[0], p[1] + off[1]];
+  const glow = 0.35 + 0.65 * t;
+  // muscle overlays
+  const hl = [];
+  if (def.hl.includes('quads')) {
+    const n = figDir(P.A.thigh + 90); // front side of the thigh
+    const a = lerp(P.knee, P.hip, 0.15), b = lerp(P.knee, P.hip, 0.85);
+    hl.push(seg([a[0] + n[0] * 5, a[1] + n[1] * 5], [b[0] + n[0] * 5, b[1] + n[1] * 5], 12, C.accent, `opacity="${glow.toFixed(2)}"`));
+  }
+  if (def.hl.includes('glutes')) {
+    const back = figDir(P.A.torso - 90), up = figDir(P.A.torso);
+    const g = [P.hip[0] + back[0] * 12 + up[0] * 3, P.hip[1] + back[1] * 12 + up[1] * 3];
+    hl.push(`<ellipse cx="${f(g[0])}" cy="${f(g[1])}" rx="9" ry="13" transform="rotate(${f(P.A.torso)} ${f(g[0])} ${f(g[1])})" fill="${C.accent}" opacity="${glow.toFixed(2)}"/>`);
+  }
+  const toe = [P.ankle[0] + 28, P.ankle[1] + 4], heel = [P.ankle[0] - 6, P.ankle[1] + 4];
+  const torsoA = lerp(P.hip, P.shoulder, 0.08), torsoB = lerp(P.hip, P.shoulder, 0.92);
+  return `<svg viewBox="0 0 300 290" xmlns="http://www.w3.org/2000/svg" role="img">
+    <line x1="40" y1="${f(P.ankle[1] + 9)}" x2="260" y2="${f(P.ankle[1] + 9)}" stroke="${C.floor}" stroke-width="3" stroke-linecap="round"/>
+    ${seg(sh(P.ankle), sh(P.knee), 18, C.far)}${seg(sh(P.knee), sh(P.hip), 23, C.far)}${seg(sh(heel), sh(toe), 11, C.far)}
+    ${seg(P.shoulder, P.elbow, 14, C.far)}${seg(P.elbow, P.hand, 12, C.far)}
+    ${seg(torsoA, torsoB, 38, C.body)}
+    ${seg(P.ankle, P.knee, 18, C.body)}${seg(P.knee, P.hip, 24, C.body)}${seg(heel, toe, 11, C.prop)}
+    ${hl.join('')}
+    ${P.bar ? `<circle cx="${f(P.bar[0])}" cy="${f(P.bar[1])}" r="27" fill="${C.prop}"/><circle cx="${f(P.bar[0])}" cy="${f(P.bar[1])}" r="18" fill="none" stroke="${C.floor}" stroke-opacity=".35" stroke-width="2"/><circle cx="${f(P.bar[0])}" cy="${f(P.bar[1])}" r="5" fill="${C.floor}"/>` : ''}
+    ${seg(P.shoulder, P.head, 10, C.body)}
+    <circle cx="${f(P.head[0])}" cy="${f(P.head[1])}" r="${FIG_L.head}" fill="${C.body}"/>
+    ${seg(P.shoulder, P.elbow, 18, C.bg)}${seg(P.elbow, P.hand, 16, C.bg)}
+    ${seg(P.shoulder, P.elbow, 14, C.body)}${seg(P.elbow, P.hand, 12, C.body)}
+  </svg>`;
+}
+
 const FP_SLUGS = { bench:'bench-press', incline_bb:'incline-barbell-bench-press', fly:'pec-deck-fly', low_cable_fly:'low-cable-crossover', cable_fly:'high-cable-crossover', db_fly:'dumbbell-fly' };
 
 </script>
@@ -426,7 +511,7 @@ const FP_SLUGS = { bench:'bench-press', incline_bb:'incline-barbell-bench-press'
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '3';
+const APP_VERSION = '4';
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
 const MKEYS = [['weight','kg'],['waist','cm'],['fat','pct'],['chest','cm'],['arm','cm'],['thigh','cm'],['hips','cm']];
@@ -619,7 +704,7 @@ const I18N = {
     saveFail:'الحفظ ما نجحش. جرّب تاني بعد شوية.',
     today:'النهارده', yesterday:'امبارح', daysAgo:n=>`من ${n} أيام`,
     up:'لفوق', down:'لتحت', back:'رجوع', min:n=>`${n} د`,
-    actOpen:'افتح الجلسة', actDelete:'امسح من السجل', longPressHint:'اضغط مطوّل على أي جلسة عشان تمسحها.',
+    figLegend:'العضلات اللي بتشتغل', actOpen:'افتح الجلسة', actDelete:'امسح من السجل', longPressHint:'اضغط مطوّل على أي جلسة عشان تمسحها.',
     muscles:'العضلات', steps:'الخطوات', tip:'نصيحة', fpBtn:'شوف الـ GIF على FitnessProgramer', ytBtn:'فيديو على يوتيوب', noGuide:'مفيش شرح مكتوب للتمرين ده لأنك ضفته بنفسك. استخدم الزراير اللي تحت.',
     fArea:'المنطقة', stretchesFor:n=>`إطالات لـ${n}`,
     a_neck:'الرقبة', a_shoulders:'الأكتاف', a_chest:'الصدر', a_back:'الضهر', a_lowback:'أسفل الضهر', a_arms:'الدراع', a_hips:'الحوض ومثنية الفخذ', a_glutes:'الألوية', a_quads:'الأمامية', a_hamstrings:'الخلفية', a_calves:'السمانة',
@@ -684,7 +769,7 @@ const I18N = {
     saveFail:"Couldn't save. Try again in a moment.",
     today:'Today', yesterday:'Yesterday', daysAgo:n=>`${n} days ago`,
     up:'Move up', down:'Move down', back:'Back', min:n=>`${n} min`,
-    actOpen:'Open session', actDelete:'Delete from history', longPressHint:'Long-press a session to delete it.',
+    figLegend:'Muscles working', actOpen:'Open session', actDelete:'Delete from history', longPressHint:'Long-press a session to delete it.',
     muscles:'Muscles', steps:'Steps', tip:'Tip', fpBtn:'See the GIF on FitnessProgramer', ytBtn:'YouTube video', noGuide:'No written guide for exercises you added yourself. Use the links below.',
     fArea:'Area', stretchesFor:n=>`Stretches for ${n}`,
     a_neck:'Neck', a_shoulders:'Shoulders', a_chest:'Chest', a_back:'Back', a_lowback:'Lower back', a_arms:'Arms', a_hips:'Hips & hip flexors', a_glutes:'Glutes', a_quads:'Quads', a_hamstrings:'Hamstrings', a_calves:'Calves',
@@ -813,7 +898,25 @@ function openHowTo(id) {
     <a class="btn block" href="${esc(ytURL(id))}" target="_blank" rel="noopener">${ICON.play.replace('<svg', '<svg width="16" height="16"')}${esc(t('ytBtn'))}</a></div>`;
   const r = computeRecords().find(x => x.exId === id);
   const best = r ? `<div class="guide-tip"><b>${esc(t('yourBest'))}:</b> ${esc(r.md === 'wr' && r.maxW ? `${t('recHeaviest')} ${fmtW(r.maxW)}×${r.maxWr} · ${t('rec1rm')} ${fmtW(half(r.e1))} ${t('kg')}` : r.md === 't' ? `${t('recLongest')} ${r.maxR}${t('secShort')}` : `${t('recMostReps')} ${r.maxR}`)} · ${esc(t('recTimes', r.n))}</div>` : '';
-  openSheet(exName(ex), body.replace('<div class="guide-links">', best + '<div class="guide-links">'));
+  const fig = FIGURES[id] ? `<div class="fig"><div id="figBox" aria-label="${esc(exName(ex))}"></div><span class="legend"><i></i>${esc(t('figLegend'))}</span></div>` : '';
+  openSheet(exName(ex), fig + body.replace('<div class="guide-links">', best + '<div class="guide-links">'));
+  if (FIGURES[id]) animateFigure(id);
+}
+const FIG_COLORS = { body:'#6B7385', far:'#C3CAD6', accent:'#0284C7', prop:'#1F2433', floor:'#E3E7EF', bg:'#FFFFFF' };
+function animateFigure(id) {
+  const def = FIGURES[id], box = $('#figBox'); if (!box) return;
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) { box.innerHTML = figureSVG(id, 1, FIG_COLORS); return; }
+  const total = def.down + def.hold + def.up + def.rest, ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  const t0 = performance.now();
+  const frame = now => {
+    if (!box.isConnected) return;
+    const s = ((now - t0) / 1000) % total;
+    const k = s < def.down ? ease(s / def.down) : s < def.down + def.hold ? 1 : s < def.down + def.hold + def.up ? 1 - ease((s - def.down - def.hold) / def.up) : 0;
+    box.innerHTML = figureSVG(id, k, FIG_COLORS);
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
 }
 const ytURL = id => { const ex = exById(id); const q = ex.en ? `${ex.en} ${ex.g === 'stretch' ? 'stretch' : 'exercise'} proper form` : `${ex.name} تمرين`; return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q); };
 const gColor = g => `var(--g-${GROUPS.includes(g) ? g : 'other'})`;
