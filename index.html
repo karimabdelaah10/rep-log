@@ -249,6 +249,16 @@ button.no:hover{background:var(--surface-2)}
 .mrow .iconbtn{width:34px;height:34px;color:var(--muted)}
 .mrow .iconbtn svg{width:18px;height:18px}
 
+/* reorder */
+.ro-list{display:flex;flex-direction:column;gap:8px}
+.ro-item{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);touch-action:none;-webkit-user-select:none;user-select:none;cursor:grab;transition:transform .18s ease;position:relative}
+.ro-item .no{font-family:var(--f-disp);font-weight:800;color:var(--accent);width:22px;text-align:center}
+.ro-item .nm{flex:1;min-width:0;font-weight:600}
+.ro-item .grip{color:var(--muted);display:grid;place-items:center}
+.ro-item.drag{transition:none;z-index:5;box-shadow:0 14px 30px rgb(31 36 51 / .22);background:var(--accent-soft);cursor:grabbing}
+.ex{-webkit-touch-callout:none}
+.ex .ex-head h3{-webkit-user-select:none;user-select:none}
+
 /* how-to sheet */
 .photo-anim{position:relative;border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);max-width:100%;background:#EEF1F6;flex:none}
 .photo-anim img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
@@ -526,7 +536,7 @@ const FP_SLUGS = { bench:'bench-press', incline_bb:'incline-barbell-bench-press'
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '10';
+const APP_VERSION = '11';
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
 const MKEYS = [['weight','kg'],['waist','cm'],['fat','pct'],['chest','cm'],['arm','cm'],['thigh','cm'],['hips','cm']];
@@ -732,6 +742,7 @@ const I18N = {
     fArea:'المنطقة', stretchesFor:n=>`إطالات لـ${n}`,
     a_neck:'الرقبة', a_shoulders:'الأكتاف', a_chest:'الصدر', a_back:'الضهر', a_lowback:'أسفل الضهر', a_arms:'الدراع', a_hips:'الحوض ومثنية الفخذ', a_glutes:'الألوية', a_quads:'الأمامية', a_hamstrings:'الخلفية', a_calves:'السمانة',
     importRoutinesQ:(n, names)=>`هيتضاف ${n} روتين لروتيناتك: ${names}. لو عندك روتين بنفس الاسم هيتحدّث. جلساتك وإعداداتك مش هتتأثر.`, routinesImported:n=>`اتضاف ${n} روتين`,
+    reorderTitle:'رتّب التمارين', reorderHint:'اسحب أي تمرين لفوق أو لتحت، وبعدين دوس تم.', reorderBtn:'ترتيب', reorderLP:'اضغط مطوّل على أي تمرين عشان ترتّب الترتيب.',
     templates:'روتينات جاهزة', addTemplate:'+ أضفه لروتيناتي', templateAdded:'موجود عندك', templateDone:n=>`روتين «${n}» اتضاف`,
     navExercises:'التمارين', exCount:n=>`${n} تمرين`, yourBest:'أحسن أرقامك', addedCustom:'التمرين اتضاف لقايمتك', versionL:n=>`الإصدار ${n}`, updating:'فيه نسخة جديدة، بيتحدّث…',
     navBody:'الجسم', ty_w:'إ', ty_f:'ف', ty_d:'د', tyName_w:'إحماء', tyName_f:'للفشل', tyName_d:'دروب سيت', tyNormal:'مجموعة عادية', setTypeA:'نوع المجموعة',
@@ -799,6 +810,7 @@ const I18N = {
     fArea:'Area', stretchesFor:n=>`Stretches for ${n}`,
     a_neck:'Neck', a_shoulders:'Shoulders', a_chest:'Chest', a_back:'Back', a_lowback:'Lower back', a_arms:'Arms', a_hips:'Hips & hip flexors', a_glutes:'Glutes', a_quads:'Quads', a_hamstrings:'Hamstrings', a_calves:'Calves',
     importRoutinesQ:(n, names)=>`${n} routines will be added: ${names}. A routine with the same name is updated. Your sessions and settings stay as they are.`, routinesImported:n=>`${n} routines added`,
+    reorderTitle:'Reorder exercises', reorderHint:'Drag an exercise up or down, then tap Done.', reorderBtn:'Reorder', reorderLP:'Long-press any exercise to reorder.',
     templates:'Ready-made routines', addTemplate:'+ Add to my routines', templateAdded:'Already added', templateDone:n=>`Routine “${n}” added`,
     navExercises:'Exercises', exCount:n=>`${n} exercises`, yourBest:'Your best', addedCustom:'Exercise added to your list', versionL:n=>`Version ${n}`, updating:'New version found, updating…',
     navBody:'Body', ty_w:'W', ty_f:'F', ty_d:'D', tyName_w:'Warm-up', tyName_f:'Failure', tyName_d:'Drop set', tyNormal:'Normal set', setTypeA:'Set type',
@@ -840,6 +852,7 @@ const ICON = {
   up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>',
   down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
   x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  grip:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg>',
   clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M9 2h6"/></svg>',
   trophy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4z"/><path d="M16 6h3v1a3 3 0 0 1-3 3M8 6H5v1a3 3 0 0 0 3 3M12 13v4M8 20h8"/></svg>',
   stop:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>',
@@ -1256,8 +1269,7 @@ function viewSession() {
     </header>
     <textarea class="note-area" id="sessNote" data-f="snote" rows="1" placeholder="${esc(t('notePh'))}" aria-label="${esc(t('sessionNote'))}">${esc(s.notes)}</textarea>
     ${s.items.length && !s.items.some(it => it.sets.some(x => x.t)) ? `<p class="hint">${esc(t('setTypeHint'))}</p>` : ''}
-    ${s.items.map((it, i) => exCard(s, it, i)).join('')}
-    <button class="add-ex" data-act="pickForSession">${esc(t('addExercise'))}</button>
+    ${S.reorder ? reorderBlock(s.items) : s.items.map((it, i) => exCard(s, it, i)).join('') + `<button class="add-ex" data-act="pickForSession">${esc(t('addExercise'))}</button>`}
     <button class="danger-link" data-act="${live ? 'discard' : 'deleteSession'}">${esc(live ? t('discard') : t('deleteSession'))}</button>
   </div>`;
 }
@@ -1293,6 +1305,11 @@ function exCard(s, it, i) {
   </article>`;
 }
 
+function reorderBlock(items) {
+  return `<section class="section"><div class="section-head"><div class="label">${esc(t('reorderTitle'))}</div><button class="btn primary sm" data-act="reorderDone">${esc(t('done'))}</button></div>
+    <p class="hint">${esc(t('reorderHint'))}</p>
+    <div class="ro-list">${items.map((it, i) => `<div class="ro-item" data-i="${i}"><span class="no">${i + 1}</span><span class="nm">${esc(nameOf(it.exId))}</span><span class="grip">${ICON.grip}</span></div>`).join('')}</div></section>`;
+}
 function viewRoutines() {
   const rs = S.profile.routines;
   return `<div class="view ${S.anim ? 'anim' : ''}"><header class="topbar"><h1>${esc(t('navRoutines'))}</h1>${syncBadge()}</header>
@@ -1325,12 +1342,12 @@ function viewRoutineEdit() {
       <div class="t-main"><div class="t-title">${esc(exists ? t('editRoutine') : t('createRoutine'))}</div></div>
       <button class="btn primary sm" data-act="saveRoutine">${esc(t('save'))}</button></header>
     <label class="field"><span class="label">${esc(t('routineName'))}</span><input class="input" id="rname" data-f="rname" value="${esc(d.name)}" placeholder="${esc(t('routineNamePh'))}" autocomplete="off"></label>
-    <section class="section"><div class="label">${esc(t('exercises'))}</div>
-      ${d.items.length ? `<span class="muted" style="font-size:13px">${esc(t('routineSetsHint'))} ${esc(t('setTypeHint'))}</span>` : `<div class="empty">${esc(t('noExercisesYet'))}</div>`}
+    <section class="section"><div class="section-head"><div class="label">${esc(t('exercises'))}</div>${d.items.length > 1 && !S.reorder ? `<button class="link" data-act="reorderStart">${esc(t('reorderBtn'))}</button>` : ''}</div>
+      ${d.items.length ? `<span class="muted" style="font-size:13px">${esc(t('routineSetsHint'))} ${esc(t('reorderLP'))}</span>` : `<div class="empty">${esc(t('noExercisesYet'))}</div>`}
     </section>
-    ${cards}
+    ${S.reorder ? reorderBlock(d.items) : `${cards}
     <button class="add-ex" data-act="pickForRoutine">${esc(t('addExercise'))}</button>
-    ${d.items.length ? `<button class="btn primary block" data-act="saveStart">${esc(t('startThis'))}</button>` : ''}
+    ${d.items.length ? `<button class="btn primary block" data-act="saveStart">${esc(t('startThis'))}</button>` : ''}`}
     ${exists ? `<button class="danger-link" data-act="deleteRoutine">${esc(t('deleteRoutine'))}</button>` : ''}
   </div>`;
 }
@@ -1447,7 +1464,7 @@ function render() {
   if (S.view === 'exercises') fillPicker();
 }
 function softRender() { if (S.view === 'session' || S.view === 'routineEdit' || (document.activeElement && document.activeElement.matches('#app input, #app textarea'))) { setSync(); return; } const y = window.scrollY; render(); window.scrollTo(0, y); }
-function go(view) { if (view === 'exercises' && S.pick.target !== 'library') S.pick = { target:'library', q:'', g:null, e:null, a:null, open:null }; S.view = view; if (view !== 'settings') S.exportText = null; S.anim = true; render(); window.scrollTo(0, 0); }
+function go(view) { S.reorder = false; if (view === 'exercises' && S.pick.target !== 'library') S.pick = { target:'library', q:'', g:null, e:null, a:null, open:null }; S.view = view; if (view !== 'settings') S.exportText = null; S.anim = true; render(); window.scrollTo(0, 0); }
 
 /* ---------- session logic ---------- */
 // New sets come pre-filled. Working sets take last time's working sets in order; warm-ups take last time's warm-ups.
@@ -1786,6 +1803,8 @@ document.addEventListener('click', async e => {
       const exId = b.dataset.ex;
       if (b.dataset.v === '') delete S.profile.rest[exId]; else S.profile.rest[exId] = +b.dataset.v;
       saveProfile(); closeSheet(); render(); break; }
+    case 'reorderStart': S.reorder = true; render(); break;
+    case 'reorderDone': S.reorder = false; render(); break;
     case 'newRoutine': S.routineDraft = { id:newId(), name:'', items:[] }; go('routineEdit'); setTimeout(() => $('#rname')?.focus(), 60); break;
     case 'editRoutine': { const r = S.profile.routines.find(r => r.id === b.dataset.id); if (r) { S.routineDraft = clone(r); go('routineEdit'); } break; }
     case 'rAddSet': { const sets = d.items[i].sets; const prev = sets[sets.length - 1]; sets.push({ w:prev ? prev.w : null, r:prev ? prev.r : null }); S.newKey = `r${i}-${sets.length - 1}`; render(); break; }
@@ -1852,6 +1871,48 @@ document.addEventListener('pointerdown', e => {
 });
 document.addEventListener('pointermove', e => { if (lp.on && Math.hypot(e.clientX - lp.x, e.clientY - lp.y) > 10) { lp.on = false; clearTimeout(lp.t); } });
 ['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => { lp.on = false; clearTimeout(lp.t); }));
+/* reorder: long-press a card to enter, then drag rows */
+const lpc = { t:0, on:false, x:0, y:0 };
+document.addEventListener('pointerdown', e => {
+  if (S.reorder || !['routineEdit', 'session'].includes(S.view)) return;
+  const card = e.target.closest('.ex'); if (!card || e.target.closest('input,textarea,button,a,select')) return;
+  const n = S.view === 'session' ? (cur()?.items.length || 0) : (S.routineDraft?.items.length || 0); if (n < 2) return;
+  Object.assign(lpc, { on:true, x:e.clientX, y:e.clientY }); clearTimeout(lpc.t);
+  lpc.t = setTimeout(() => { if (!lpc.on) return; lpc.on = false; try { navigator.vibrate && navigator.vibrate(30); } catch {} swStop(true); S.reorder = true; render(); window.scrollTo({ top:0 }); }, 450);
+});
+document.addEventListener('pointermove', e => { if (lpc.on && Math.hypot(e.clientX - lpc.x, e.clientY - lpc.y) > 10) { lpc.on = false; clearTimeout(lpc.t); } });
+['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => { lpc.on = false; clearTimeout(lpc.t); }));
+const drag = { on:false };
+document.addEventListener('pointerdown', e => {
+  const it = e.target.closest('.ro-item'); if (!it) return;
+  const items = [...document.querySelectorAll('.ro-item')];
+  const rects = items.map(x => x.getBoundingClientRect());
+  Object.assign(drag, { on:true, el:it, items, from:items.indexOf(it), to:items.indexOf(it), y0:e.clientY, step:(rects.length > 1 ? rects[1].top - rects[0].top : rects[0].height + 8) || 64 });
+  it.classList.add('drag'); try { it.setPointerCapture(e.pointerId); } catch {}
+  try { navigator.vibrate && navigator.vibrate(15); } catch {}
+});
+document.addEventListener('pointermove', e => {
+  if (!drag.on) return;
+  const dy = e.clientY - drag.y0;
+  drag.el.style.transform = `translateY(${dy}px)`;
+  const to = Math.max(0, Math.min(drag.items.length - 1, drag.from + Math.round(dy / drag.step)));
+  drag.to = to;
+  drag.items.forEach((x, k) => {
+    if (k === drag.from) return;
+    let sh = 0;
+    if (drag.from < to && k > drag.from && k <= to) sh = -drag.step;
+    if (drag.from > to && k < drag.from && k >= to) sh = drag.step;
+    x.style.transform = sh ? `translateY(${sh}px)` : '';
+  });
+});
+const endDrag = () => {
+  if (!drag.on) return; drag.on = false;
+  const arr = S.view === 'session' ? cur()?.items : S.routineDraft?.items;
+  if (arr && drag.to !== drag.from) { const [m] = arr.splice(drag.from, 1); arr.splice(drag.to, 0, m); if (S.view === 'session') saveSession(cur()); }
+  render();
+};
+['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, endDrag));
+document.addEventListener('contextmenu', e => { if (e.target.closest('.ex, .ro-item')) e.preventDefault(); });
 document.addEventListener('contextmenu', e => { if (e.target.closest('.row[data-act="openSession"]')) e.preventDefault(); });
 window.addEventListener('scroll', () => { const tb = document.querySelector('.topbar'); if (tb) tb.classList.toggle('scrolled', window.scrollY > 4); }, { passive:true });
 function autoGrow(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 2 + 'px'; }
