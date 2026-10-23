@@ -1,0 +1,1683 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>سجل التمرين</title>
+<meta name="description" content="سجّل تمارينك ومجموعاتك وأرقامك القياسية وقياسات جسمك.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#F6F7FB">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="سجل التمرين">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px/1.5 system-ui,-apple-system,sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+html,body{overscroll-behavior-y:none}
+</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one phone column, sticky top bar, fixed bottom tabs. Deliberately light-only: neutrals plus a single sky accent; red only for delete. */
+:root{
+  color-scheme:light;
+  --bg:#F6F7FB; --surface:#FFFFFF; --surface-2:#EEF1F7; --ink:#1F2433; --muted:#6B7385; --line:#E3E7EF;
+  --accent:#0284C7; --accent-ink:#FFFFFF; --accent-soft:#E0F2FE;
+  --done:#0284C7; --done-ink:#FFFFFF; --done-soft:#E0F2FE;
+  --danger:#E0483A; --danger-soft:#FFE7E3;
+  --sun:#0284C7; --on-sun:#FFFFFF;
+  --sky-1:#CFEFFF; --sky-2:#8FD8FB; --sky-ink:#073B57;
+  --shadow:0 1px 2px rgb(31 36 51 / .06), 0 6px 18px rgb(31 36 51 / .06);
+  --f-body:"IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+  --f-disp:"Baloo Bhaijaan 2", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --r:16px;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+button:disabled{cursor:default;opacity:.4}
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--f-disp);font-variant-numeric:tabular-nums}
+
+#app{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 calc(100px + env(safe-area-inset-bottom,0px))}
+.view{display:flex;flex-direction:column;gap:18px}
+
+/* motion */
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(.8)}55%{transform:scale(1.18)}100%{transform:scale(1)}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes float{50%{transform:translate(-6px,8px) rotate(8deg)}}
+@keyframes pulse{50%{opacity:.35}}
+@keyframes ring{25%{transform:translateY(-3px)}75%{transform:translateY(3px)}}
+.view.anim > *{animation:rise .38s cubic-bezier(.2,.8,.2,1) both}
+.view.anim > *:nth-child(2){animation-delay:.04s}.view.anim > *:nth-child(3){animation-delay:.08s}
+.view.anim > *:nth-child(4){animation-delay:.12s}.view.anim > *:nth-child(5){animation-delay:.16s}.view.anim > *:nth-child(n+6){animation-delay:.2s}
+.new{animation:rise .3s ease both}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);display:flex;align-items:center;gap:12px;padding-block:14px 10px;border-bottom:1px solid transparent;transition:border-color .2s}
+.topbar.scrolled{border-bottom-color:var(--line)}
+.topbar h1{margin:0;font-family:var(--f-disp);font-size:26px;font-weight:800;line-height:1.2;flex:1;min-width:0}
+.topbar .t-main{flex:1;min-width:0}
+.topbar .t-title{font-family:var(--f-disp);font-weight:700;font-size:19px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .t-sub{color:var(--muted);font-size:13px}
+.iconbtn{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:var(--ink);flex:none;transition:background .15s}
+.iconbtn:hover{background:var(--surface-2)}
+.iconbtn svg{width:22px;height:22px}
+[dir="rtl"] .flip{transform:scaleX(-1)}
+
+.sync{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);background:var(--surface);padding:4px 10px;border-radius:99px;box-shadow:var(--shadow)}
+.sync i{width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block}
+.sync.cloud i{background:var(--done)} .sync.local i{background:var(--sun)} .sync.saving i{background:var(--accent);animation:pulse 1s infinite}
+
+.btn{height:46px;padding-inline:18px;border-radius:14px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--surface-2);color:var(--ink);white-space:nowrap;transition:transform .12s, background .15s}
+.btn:active{transform:scale(.96)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);box-shadow:0 6px 16px rgb(2 132 199 / .25)}
+.btn.danger{background:var(--danger-soft);color:var(--danger)}
+.btn.block{width:100%}
+.btn.sm{height:38px;padding-inline:12px;font-size:14px;border-radius:11px}
+.link{color:var(--accent);font-weight:600;font-size:14px}
+
+.label{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.section{display:flex;flex-direction:column;gap:10px}
+.section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.muted{color:var(--muted)}
+.empty{padding:22px 18px;border:2px dashed var(--line);border-radius:var(--r);color:var(--muted);text-align:center;font-size:14px;background:color-mix(in srgb,var(--surface) 60%,transparent)}
+
+/* home */
+.hero{background:linear-gradient(135deg,var(--sky-1),var(--sky-2));color:var(--sky-ink);border-radius:24px;padding:22px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden;box-shadow:0 10px 26px rgb(56 189 248 / .3)}
+.hero .deco{position:absolute;inset-inline-end:-30px;top:-34px;width:150px;height:150px;border-radius:50%;border:20px solid rgb(255 255 255 / .28);animation:float 7s ease-in-out infinite;pointer-events:none}
+.hero .deco::after{content:"";position:absolute;inset:22px;border-radius:50%;border:10px solid rgb(255 255 255 / .22)}
+.hero .h-date{font-size:14px;font-weight:600;opacity:.75;position:relative}
+.hero .h-title{font-family:var(--f-disp);font-size:30px;font-weight:800;line-height:1.15;position:relative;text-wrap:balance}
+.hero .h-sub{font-size:14px;position:relative}
+.hero .btn{background:#FFFFFF;color:var(--accent);align-self:flex-start;position:relative;box-shadow:0 6px 14px rgb(7 59 87 / .14)}
+.hero .live{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;position:relative}
+.hero .live i{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:pulse 1.4s infinite}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--surface);border-radius:var(--r);padding:12px 14px;box-shadow:var(--shadow)}
+.stat b{display:block;font-family:var(--f-disp);font-size:30px;font-weight:800;line-height:1.1}
+.stat span{font-size:12px;color:var(--muted)}
+
+.list{display:flex;flex-direction:column;background:var(--surface);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.row{display:flex;align-items:center;gap:14px;padding:14px 16px;text-align:start;width:100%;border-bottom:1px solid var(--line);transition:background .15s}
+.row:last-child{border-bottom:0}
+.row:hover{background:var(--surface-2)}
+.row .date{width:48px;height:52px;flex:none;text-align:center;line-height:1;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:flex;flex-direction:column;justify-content:center;gap:3px}
+.row .date b{font-family:var(--f-disp);font-size:22px;font-weight:800}
+.row .date small{font-size:11px;font-weight:600}
+.row .main{flex:1;min-width:0}
+.row .r-title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .r-sub{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .chev{color:var(--muted);flex:none}
+
+/* tags */
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--c);flex:none;display:inline-block}
+
+/* exercise cards (session + routine) */
+.note-area{width:100%;min-height:46px;resize:vertical;border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:11px 13px;line-height:1.5}
+.note-area:focus,.ex-note:focus{outline:none;border-color:var(--accent)}
+.ex{background:var(--surface);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow)}
+.ex-head{display:flex;align-items:flex-start;gap:6px}
+.ex-head .ttl{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.ex-head h3{margin:0;font-family:var(--f-disp);font-size:19px;font-weight:700;line-height:1.25}
+.ex-head .tools{display:flex;gap:2px}
+.ex-head .tools .iconbtn{width:34px;height:34px;color:var(--muted)}
+.ex-head .tools .iconbtn svg{width:18px;height:18px}
+.ex-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.mini{height:30px;padding-inline:10px;border-radius:99px;background:var(--surface-2);color:var(--ink);font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;text-decoration:none;transition:transform .12s}
+.mini:active{transform:scale(.95)}
+.mini svg{width:14px;height:14px;flex:none}
+.mini.acc{color:var(--accent);background:var(--accent-soft)}
+.last{font-size:13px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:baseline;background:var(--surface-2);border-radius:10px;padding:6px 10px}
+.last .num{font-size:16px;font-weight:700;color:var(--ink)}
+.sets{display:flex;flex-direction:column;gap:7px}
+.set{display:grid;grid-template-columns:30px 1fr 1fr 48px;gap:8px;align-items:center}
+.set.bw{grid-template-columns:30px 1fr 48px}
+.set.head{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center}
+.set .no{font-family:var(--f-disp);font-weight:700;font-size:18px;text-align:center;color:var(--muted);transition:color .2s,background .2s;height:38px;border-radius:10px;display:grid;place-items:center}
+button.no:hover{background:var(--surface-2)}
+.set .no.ty-w{background:var(--surface-2);color:var(--muted);font-size:15px}
+.set .no.ty-f,.set .no.ty-d{background:var(--accent-soft);color:var(--accent);font-size:15px}
+.set.timed{grid-template-columns:30px 1fr 48px 48px}
+.sw{width:48px;height:48px;border-radius:13px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;transition:background .2s}
+.sw svg{width:18px;height:18px}
+.sw.on{background:var(--accent);color:var(--accent-ink);animation:pulse 1.2s infinite}
+.hint{margin:0;font-size:12.5px;color:var(--muted)}
+.set input{width:100%;min-width:0;height:48px;border-radius:13px;border:2px solid transparent;background:var(--surface-2);text-align:center;font-family:var(--f-disp);font-weight:700;font-size:22px;padding:0 4px;transition:background .25s,border-color .15s}
+.set input::placeholder{color:#AEB5C4;font-weight:600}
+.set input:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+.check,.xbtn{width:48px;height:48px;border-radius:13px;background:var(--surface-2);color:var(--muted);display:grid;place-items:center;transition:background .2s,color .2s}
+.check svg{width:22px;height:22px}
+.xbtn svg{width:18px;height:18px}
+.set.done input{background:var(--done-soft)}
+.set.done .check{background:var(--done);color:var(--done-ink);animation:pop .35s ease}
+.set.done .no{color:var(--done)}
+.ex-actions{display:flex;gap:8px;flex-wrap:wrap}
+.ex-actions .btn{flex:1}
+.ex-note{width:100%;min-height:42px;resize:vertical;border:1.5px solid var(--line);background:transparent;border-radius:12px;padding:8px 10px;font-size:14px}
+.add-ex{height:56px;border:2px dashed color-mix(in srgb,var(--accent) 45%,var(--line));color:var(--accent);background:color-mix(in srgb,var(--accent-soft) 50%,transparent);border-radius:18px;font-weight:700;width:100%;transition:transform .12s}
+.add-ex:active{transform:scale(.98)}
+.danger-link{color:var(--danger);font-weight:600;font-size:14px;padding:10px;align-self:center}
+
+.timer{position:fixed;inset:auto 0 0 0;z-index:8;background:var(--sun);color:var(--on-sun);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-bottom:env(safe-area-inset-bottom,0px);border-radius:20px 20px 0 0;box-shadow:0 -6px 20px rgb(2 132 199 / .3);animation:slideUp .3s cubic-bezier(.2,.8,.2,1)}
+.timer-in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:10px;padding-block:12px}
+.timer .t-time{font-family:var(--f-disp);font-size:34px;font-weight:800;min-width:80px;line-height:1}
+.timer .t-lbl{font-size:12px;font-weight:700;opacity:.8}
+.timer .grow{flex:1;min-width:0}
+.timer .bar{height:6px;border-radius:3px;background:rgb(255 255 255 / .3);overflow:hidden;margin-top:6px}
+.timer .bar i{display:block;height:100%;background:var(--on-sun);width:0;border-radius:3px;transition:width .25s linear}
+.timer button{height:40px;min-width:46px;padding-inline:10px;border-radius:12px;background:rgb(255 255 255 / .2);font-weight:800;font-family:var(--f-disp);font-size:17px;display:grid;place-items:center}
+.timer.ring{animation:ring .25s 6}
+
+/* routines */
+.r-card{background:var(--surface);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
+.r-open{display:flex;flex-direction:column;gap:8px;text-align:start;width:100%}
+.r-acts{display:flex;gap:8px}.r-acts .btn{flex:1}
+.r-card .r-name{font-family:var(--f-disp);font-weight:800;font-size:20px;line-height:1.2}
+.r-card .r-ex{font-size:13px;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:6px}
+.input{height:50px;border-radius:14px;border:2px solid var(--line);background:var(--surface);padding-inline:14px;width:100%;transition:border-color .15s}
+.input:focus{outline:none;border-color:var(--accent)}
+.ritem{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.ritem:last-child{border-bottom:0}
+.ritem .nm{flex:1;min-width:0;font-weight:500}
+.ritem .iconbtn{width:34px;height:34px;color:var(--muted)}
+.ritem .iconbtn svg{width:18px;height:18px}
+
+/* settings */
+.seg{display:flex;background:var(--surface-2);border-radius:14px;padding:4px;gap:4px;flex-wrap:wrap}
+.seg button{flex:1;height:42px;border-radius:11px;font-weight:600;color:var(--muted);min-width:56px;transition:background .2s,color .2s}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--accent);box-shadow:var(--shadow)}
+.card{background:var(--surface);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
+.mono-box{width:100%;min-height:140px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface-2);padding:10px;direction:ltr}
+.filelbl{position:relative;overflow:hidden}
+.filelbl input{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+/* nav */
+.nav{position:fixed;inset:auto 0 0 0;z-index:7;background:rgb(255 255 255 / .92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav-in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+.nav button{display:flex;flex-direction:column;align-items:center;gap:2px;padding-block:8px;font-size:11.5px;white-space:nowrap;font-weight:600;color:var(--muted)}
+.nav button .ico{width:46px;height:30px;border-radius:99px;display:grid;place-items:center;transition:background .2s}
+.nav button svg{width:22px;height:22px}
+.nav button[aria-current="page"]{color:var(--accent)}
+.nav button[aria-current="page"] .ico{background:var(--accent-soft)}
+
+/* body + records */
+.mgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mfield{display:flex;flex-direction:column;gap:4px;min-width:0}
+.mfield .label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.minput{display:flex;align-items:center;background:var(--surface-2);border-radius:12px;padding-inline:8px;border:2px solid transparent;transition:border-color .15s,background .15s}
+.minput:focus-within{border-color:var(--accent);background:var(--surface)}
+.minput input{flex:1;min-width:0;width:100%;height:46px;border:0;background:transparent;font-family:var(--f-disp);font-weight:700;font-size:20px;text-align:center;padding:0}
+.minput input:focus{outline:none}
+.minput input::placeholder{color:#AEB5C4;font-weight:600}
+.minput em{font-style:normal;font-size:12px;color:var(--muted);flex:none}
+.date-in{height:46px;border-radius:12px;border:2px solid var(--line);background:var(--surface);padding-inline:10px;width:100%}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{background:var(--surface);border-radius:var(--r);padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:2px;min-width:0}
+.tile b{font-family:var(--f-disp);font-size:30px;font-weight:800;line-height:1.15}
+.tile b small{font-size:14px;color:var(--muted);font-weight:600}
+.tile .d{font-size:12.5px;color:var(--muted)}
+.chart{background:var(--surface);border-radius:var(--r);padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px}
+.chart svg{width:100%;height:auto;display:block}
+.chart text{font-family:var(--f-body);font-size:10px;fill:var(--muted)}
+.rec{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.rec:last-child{border-bottom:0}
+.rec .nm{font-weight:700}
+.rec .vals{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:13px;color:var(--muted);align-items:baseline}
+.rec .vals b{font-family:var(--f-disp);font-size:18px;color:var(--ink);margin-inline-start:4px}
+.mrow{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.mrow:last-child{border-bottom:0}
+.mrow .main{flex:1;min-width:0;font-size:13.5px}
+.mrow .main b{font-weight:700}
+.mrow .iconbtn{width:34px;height:34px;color:var(--muted)}
+.mrow .iconbtn svg{width:18px;height:18px}
+
+/* how-to sheet */
+.guide-steps{margin:0;padding-inline-start:22px;display:flex;flex-direction:column;gap:8px;line-height:1.6}
+.guide-tip{background:var(--accent-soft);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:14px}
+.guide-links{display:flex;flex-direction:column;gap:8px}
+a.btn{text-decoration:none}
+.row{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.pick-item.danger{color:var(--danger)}
+
+/* sheet + modal */
+.scrim{position:fixed;inset:0;z-index:20;background:rgb(31 36 51 / .35);display:flex;align-items:flex-end;justify-content:center;animation:fade .2s ease}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:88vh;border-radius:26px 26px 0 0;display:flex;flex-direction:column;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));animation:slideUp .32s cubic-bezier(.2,.8,.2,1)}
+.sheet::before{content:"";width:40px;height:5px;border-radius:3px;background:var(--line);margin:10px auto 0;flex:none}
+.sheet-head{display:flex;align-items:center;gap:10px;padding-block:8px 10px}
+.sheet-head h2{margin:0;font-family:var(--f-disp);font-size:21px;font-weight:800;flex:1}
+.sheet-body{overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-bottom:6px;min-height:0}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fbtn{height:46px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;padding-inline:12px;text-align:start;border:2px solid transparent;transition:border-color .15s,background .15s;min-width:0}
+.fbtn .fl{font-size:11px;font-weight:700;color:var(--muted);display:block;line-height:1.1}
+.fbtn .fv{font-weight:700;font-size:14px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fbtn .txt{flex:1;min-width:0}
+.fbtn .car{color:var(--muted);transition:transform .2s;flex:none}
+.fbtn[aria-expanded="true"]{border-color:var(--accent)}
+.fbtn[aria-expanded="true"] .car{transform:rotate(180deg)}
+.fbtn.on{background:var(--accent-soft)}
+.fbtn.on .fv{color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;animation:rise .2s ease}
+.chip{height:38px;padding-inline:14px;border-radius:99px;background:var(--surface);box-shadow:var(--shadow);font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:7px;border:2px solid transparent;transition:background .15s}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.pick-group{display:flex;flex-direction:column;gap:6px}
+.pick-item{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border-radius:14px;text-align:start;width:100%;box-shadow:var(--shadow);transition:transform .12s}
+.pick-item:active{transform:scale(.98)}
+.pick-item .nm{flex:1;min-width:0;font-weight:500}
+.pick-item small{color:var(--muted)}
+.pick-item.in{opacity:.5}
+.add-custom{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;background:var(--surface);border-radius:16px;padding:12px;box-shadow:var(--shadow)}
+.add-custom .btn{grid-column:1/-1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.add-custom select{height:44px;border-radius:12px;border:2px solid var(--line);background:var(--surface);padding-inline:8px;min-width:0}
+.modal{background:var(--surface);border-radius:22px;padding:22px;max-width:380px;width:calc(100% - 32px);margin:auto;display:flex;flex-direction:column;gap:18px;animation:pop .28s ease}
+.modal p{margin:0;font-size:16px;line-height:1.6}
+.modal .acts{display:flex;gap:10px;justify-content:flex-end}
+.scrim.center{align-items:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--ink);color:#FFFFFF;padding:11px 18px;border-radius:14px;font-weight:600;font-size:14px;max-width:calc(100% - 32px);animation:rise .25s ease}
+</style>
+
+<div id="app" aria-live="polite"></div>
+<div id="layer"></div>
+<div id="toast" hidden class="toast" role="status"></div>
+
+<script>
+// Exercise guide: original short instructions (Arabic + English). m = muscles, a/e = steps, ta/te = tip.
+const GUIDE = {
+bench:{m:['الصدر، الكتف الأمامي، التراي','Chest, front delts, triceps'],a:['نام على البنش ورجلك ثابتة في الأرض ولوحي كتفك مضمومين لورا.','امسك البار أعرض من كتفك بشوية ونزّله بالراحة لحد منتصف صدرك.','ادفع البار لفوق في خط مستقيم لحد ما دراعك يتفرد.'],e:['Lie on the bench, feet planted, shoulder blades pulled back.','Grip slightly wider than shoulders and lower the bar to mid-chest under control.','Press straight up until your arms are extended.'],ta:'خلّي كوعك زاوية حوالي 45° من جسمك ومتنطّش البار من على صدرك.',te:'Keep elbows around 45° from your body and don’t bounce the bar off your chest.'},
+incline_bb:{m:['أعلى الصدر، الكتف الأمامي، التراي','Upper chest, front delts, triceps'],a:['اظبط البنش على زاوية 30–45°.','نزّل البار لأعلى صدرك تحت الترقوة.','ادفع لفوق وثبّت ضهرك على البنش.'],e:['Set the bench to 30–45°.','Lower the bar to your upper chest, just below the collarbone.','Press up while keeping your back on the bench.'],ta:'الزاوية العالية أوي بتحوّل الشغل على الكتف.',te:'Too steep an angle shifts the work to your shoulders.'},
+decline_bb:{m:['أسفل الصدر، التراي','Lower chest, triceps'],a:['ثبّت رجلك في مسند البنش النازل.','نزّل البار لأسفل صدرك.','ادفع لفوق لحد ما دراعك يتفرد.'],e:['Hook your legs into the decline bench.','Lower the bar to your lower chest.','Press up to full extension.'],ta:'استخدم سبوتر لأن رجوع البار للحامل أصعب في الوضع ده.',te:'Use a spotter; re-racking is harder in this position.'},
+db_bench:{m:['الصدر، الكتف الأمامي، التراي','Chest, front delts, triceps'],a:['نام على البنش والدمبلز عند صدرك.','ادفع الدمبلز لفوق لحد ما يقربوا من بعض.','نزّلهم بالراحة لحد ما تحس بإطالة في الصدر.'],e:['Lie on the bench with dumbbells at chest level.','Press up until they nearly touch.','Lower slowly until you feel a stretch in your chest.'],ta:'الدمبلز بتديك مدى حركة أكبر من البار، استغله من غير ما تنزل لدرجة الألم في الكتف.',te:'Dumbbells allow a deeper range; use it without pain in the shoulder.'},
+incline_db:{m:['أعلى الصدر، الكتف الأمامي','Upper chest, front delts'],a:['البنش على 30–45° والدمبلز عند أعلى صدرك.','ادفع لفوق وقرّبهم من بعض في الآخر.','نزّل بتحكم لنفس النقطة.'],e:['Bench at 30–45°, dumbbells at upper chest.','Press up, bringing them together at the top.','Lower under control to the start.'],ta:'ما تقفلش الكوع بعنف في آخر الحركة.',te:'Don’t snap your elbows locked at the top.'},
+db_fly:{m:['الصدر','Chest'],a:['نام على البنش والدمبلز فوق صدرك والكوع مثني سنة صغيرة.','افتح دراعاتك لجنب في قوس واسع لحد ما تحس بإطالة.','ارجع بنفس القوس كأنك بتحضن شجرة.'],e:['Lie down with dumbbells above your chest, elbows slightly bent.','Open your arms in a wide arc until you feel a stretch.','Return along the same arc, like hugging a tree.'],ta:'ثبّت ثنية الكوع طول الحركة، دي مش ضغط.',te:'Keep the elbow bend fixed; it’s not a press.'},
+chest_press:{m:['الصدر، التراي','Chest, triceps'],a:['اظبط الكرسي بحيث المقابض على مستوى منتصف صدرك.','ادفع لقدام لحد ما دراعك يتفرد تقريباً.','ارجع بالراحة من غير ما الأوزان تخبط.'],e:['Set the seat so handles line up with mid-chest.','Press forward to near full extension.','Return slowly without letting the stack touch.'],ta:'ضهرك لازق في المسند طول الوقت.',te:'Keep your back against the pad throughout.'},
+fly:{m:['الصدر','Chest'],a:['اقعد وضهرك على المسند والمقابض على مستوى صدرك.','قرّب دراعاتك لقدام لحد ما المقابض تتقابل.','ارجع بالراحة لحد ما تحس بإطالة.'],e:['Sit with your back on the pad, handles at chest height.','Bring your arms together in front.','Return slowly to a comfortable stretch.'],ta:'اعصر صدرك ثانية في النص.',te:'Squeeze your chest for a second at the middle.'},
+cable_fly:{m:['الصدر','Chest'],a:['اظبط البكرات فوق وامسك المقبضين وخطوة لقدام.','اسحب إيديك لتحت ولقدام لحد ما يتقابلوا قدام وسطك.','ارجع بتحكم لحد ما تحس بإطالة.'],e:['Set pulleys high, grab both handles and step forward.','Pull your hands down and together in front of your waist.','Return under control to a stretch.'],ta:'ميّل جسمك لقدام سنة صغيرة وثبّته.',te:'Lean slightly forward and keep your torso still.'},
+low_cable_fly:{m:['أعلى الصدر','Upper chest'],a:['اظبط البكرات تحت وامسك المقبضين.','اسحب إيديك لفوق ولقدام لحد مستوى كتفك.','نزّل بالراحة لنفس المكان.'],e:['Set pulleys low and grab the handles.','Sweep your hands up and together to shoulder height.','Lower slowly to the start.'],ta:'الكوع مثني سنة ثابتة.',te:'Keep a slight, fixed bend in the elbows.'},
+dips:{m:['أسفل الصدر، التراي، الكتف الأمامي','Lower chest, triceps, front delts'],a:['امسك المتوازي وارفع جسمك ودراعك مفرود.','ميّل لقدام سنة ونزّل لحد ما الكوع يبقى 90°.','ادفع لفوق لحد ما دراعك يتفرد.'],e:['Support yourself on the bars with arms straight.','Lean slightly forward and lower until elbows hit 90°.','Push back up to straight arms.'],ta:'لو كتفك بيوجعك قلّل النزول.',te:'If your shoulders hurt, shorten the range.'},
+pushup:{m:['الصدر، التراي، الكتف، الكور','Chest, triceps, shoulders, core'],a:['إيديك أعرض من كتفك بسنة وجسمك خط مستقيم.','انزل لحد ما صدرك يقرب من الأرض.','ادفع لفوق وإنت مشدود البطن.'],e:['Hands slightly wider than shoulders, body in a straight line.','Lower until your chest nearly touches the floor.','Push back up with your core braced.'],ta:'ما تخليش وسطك ينزل لتحت.',te:'Don’t let your hips sag.'},
+incline_pushup:{m:['الصدر، التراي','Chest, triceps'],a:['حط إيديك على بنش أو سطح عالي.','انزل بصدرك ناحية الحافة وجسمك مستقيم.','ادفع لفوق.'],e:['Place your hands on a bench or raised surface.','Lower your chest toward the edge, body straight.','Push back up.'],ta:'أسهل نسخة من الضغط، كل ما السطح يوطى بتصعب.',te:'The easiest push-up variation; lower surface means harder.'},
+deadlift:{m:['الخلفية، الألوية، أسفل الضهر، الترابيس','Hamstrings, glutes, lower back, traps'],a:['قف ونص رجلك تحت البار، وامسك البار جنب رجلك.','ضهرك مفرود وصدرك لفوق، ادفع الأرض برجلك وارفع البار قريب من جسمك.','اقف مفرود في الآخر ونزّل بنفس الطريق.'],e:['Stand with mid-foot under the bar, grip just outside your legs.','With a flat back and chest up, push the floor away and lift the bar close to your body.','Stand tall, then lower along the same path.'],ta:'البار لازم يفضل لازق في رجلك، وما تقوّسش ضهرك.',te:'Keep the bar against your legs and never round your back.'},
+bb_row:{m:['منتصف الضهر، اللاتس، الباي','Mid back, lats, biceps'],a:['انحني لقدام 45° وضهرك مفرود والبار في إيدك.','اسحب البار لأسفل صدرك أو بطنك.','نزّل بتحكم.'],e:['Hinge forward about 45° with a flat back, holding the bar.','Pull the bar to your lower chest or belly.','Lower under control.'],ta:'ما تستخدمش جسمك عشان ترمي الوزن لفوق.',te:'Don’t swing your torso to heave the weight.'},
+tbar_row:{m:['منتصف الضهر، اللاتس','Mid back, lats'],a:['اقف فوق البار وانحني وضهرك مفرود.','اسحب المقبض ناحية صدرك.','نزّل بالراحة.'],e:['Straddle the bar and hinge with a flat back.','Pull the handle toward your chest.','Lower slowly.'],ta:'اعصر لوحي الكتف مع بعض فوق.',te:'Squeeze your shoulder blades together at the top.'},
+db_row:{m:['اللاتس، منتصف الضهر','Lats, mid back'],a:['ركبة وإيد على البنش والدمبل في الإيد التانية.','اسحب الدمبل ناحية وسطك والكوع قريب من جسمك.','نزّل لحد ما الدراع يتفرد.'],e:['One knee and hand on the bench, dumbbell in the other hand.','Pull the dumbbell toward your hip, elbow close to your body.','Lower to a full stretch.'],ta:'تخيّل إنك بتسحب بكوعك مش بإيدك.',te:'Think of pulling with your elbow, not your hand.'},
+db_shrug:{m:['الترابيس','Traps'],a:['اقف والدمبلز جنبك.','ارفع كتافك لفوق ناحية ودانك.','اثبت ثانية ونزّل بالراحة.'],e:['Stand with dumbbells at your sides.','Raise your shoulders toward your ears.','Pause, then lower slowly.'],ta:'ما تلفّش كتافك، طلوع ونزول بس.',te:'Don’t roll your shoulders; just up and down.'},
+lat_pd:{m:['اللاتس، الباي','Lats, biceps'],a:['امسك البار أعرض من كتفك واقعد ورجلك مثبتة.','اسحب البار لأعلى صدرك وصدرك لفوق.','طلّع البار بالراحة لحد ما دراعك يتفرد.'],e:['Grip wider than shoulders and sit with legs locked in.','Pull the bar to your upper chest, chest up.','Let it rise slowly to full stretch.'],ta:'ما تسحبش ورا راسك.',te:'Don’t pull behind your neck.'},
+close_pd:{m:['اللاتس، الباي','Lats, biceps'],a:['استخدم مقبض ضيق واقعد.','اسحب المقبض لصدرك والكوع لتحت.','ارجع بتحكم.'],e:['Use a close-grip handle and sit down.','Pull to your chest, elbows driving down.','Return under control.'],ta:'ميّل لورا سنة صغيرة بس.',te:'Lean back only slightly.'},
+cable_row:{m:['منتصف الضهر، اللاتس','Mid back, lats'],a:['اقعد وركبك مثنية سنة وضهرك مفرود.','اسحب المقبض لبطنك واعصر ضهرك.','افرد دراعك قدام بالراحة.'],e:['Sit with knees slightly bent and back straight.','Pull the handle to your belly and squeeze your back.','Extend your arms slowly.'],ta:'ما ترجعش بجسمك لورا عشان تكمّل العدّة.',te:'Don’t rock back to finish the rep.'},
+straight_pd:{m:['اللاتس','Lats'],a:['اقف قدام الكابل وامسك البار ودراعك مفرود.','انزل بالبار لحد فخذك ودراعك مفرود.','ارجع لفوق بتحكم.'],e:['Face the cable, arms straight on the bar.','Sweep the bar down to your thighs, arms straight.','Return up under control.'],ta:'الكوع ثابت، الحركة من الكتف.',te:'Elbows stay fixed; the motion is from the shoulder.'},
+machine_row:{m:['منتصف الضهر، اللاتس','Mid back, lats'],a:['صدرك على المسند وامسك المقابض.','اسحب لورا واعصر لوحي الكتف.','ارجع بالراحة.'],e:['Chest on the pad, grab the handles.','Pull back and squeeze your shoulder blades.','Return slowly.'],ta:'ثانية عصرة في الآخر.',te:'Hold the squeeze for a second.'},
+back_ext:{m:['أسفل الضهر، الألوية، الخلفية','Lower back, glutes, hamstrings'],a:['ثبّت رجلك والمسند تحت وسطك.','انزل لقدام وضهرك مفرود.','اطلع لحد ما جسمك يبقى خط مستقيم.'],e:['Lock your legs in, pad under your hips.','Lower forward with a straight back.','Rise until your body is in a straight line.'],ta:'ما تطلعش أعلى من الخط المستقيم.',te:'Don’t hyperextend past straight.'},
+pullup:{m:['اللاتس، الباي، منتصف الضهر','Lats, biceps, mid back'],a:['اتعلّق في العقلة وكفك لقدام أعرض من كتفك.','اسحب نفسك لحد ما دقنك تعدّي البار.','انزل بالراحة لحد ما دراعك يتفرد.'],e:['Hang with palms forward, wider than shoulders.','Pull until your chin clears the bar.','Lower slowly to full hang.'],ta:'لو صعبة، ابدأ بأستك مساعدة أو النزول البطيء بس.',te:'If too hard, use an assist band or slow negatives.'},
+chinup:{m:['الباي، اللاتس','Biceps, lats'],a:['اتعلّق وكفك ناحيتك بعرض كتفك.','اسحب لحد ما دقنك تعدّي البار.','انزل بتحكم.'],e:['Hang with palms facing you, shoulder-width.','Pull until your chin clears the bar.','Lower under control.'],ta:'أسهل من العقلة العادية وبتشغّل الباي أكتر.',te:'Easier than pull-ups and hits the biceps more.'},
+inv_row:{m:['منتصف الضهر، الباي','Mid back, biceps'],a:['نام تحت بار في السميث على ارتفاع الوسط وامسكه.','اسحب صدرك للبار وجسمك مستقيم.','انزل بالراحة.'],e:['Lie under a bar set at waist height and grab it.','Pull your chest to the bar, body straight.','Lower slowly.'],ta:'كل ما رجلك تبعد بتصعب.',te:'Moving your feet further out makes it harder.'},
+ohp:{m:['الكتف، التراي، أعلى الصدر','Shoulders, triceps, upper chest'],a:['اقف والبار على أعلى صدرك ومسكة بعرض الكتف.','ادفع البار لفوق راسك وراسك ترجع لورا سنة عشان يعدّي.','نزّل لأعلى صدرك بتحكم.'],e:['Stand with the bar on your upper chest, shoulder-width grip.','Press overhead, moving your head back slightly to clear the bar.','Lower to your upper chest under control.'],ta:'شد بطنك وألويتك عشان ما تقوّسش ضهرك.',te:'Brace your abs and glutes so you don’t arch.'},
+upright_row:{m:['الكتف الجانبي، الترابيس','Side delts, traps'],a:['اقف والبار قدامك بمسكة بعرض الكتف.','اسحب البار لفوق لحد تحت صدرك والكوع لفوق.','نزّل بالراحة.'],e:['Stand holding the bar with a shoulder-width grip.','Pull up to lower chest, elbows leading.','Lower slowly.'],ta:'ما تطلعش أعلى من كتفك لو بتحس بقرص في الكتف.',te:'Stop below shoulder height if you feel pinching.'},
+db_sp:{m:['الكتف، التراي','Shoulders, triceps'],a:['اقعد على بنش مفرود والدمبلز عند كتفك.','ادفع لفوق لحد ما دراعك يتفرد.','نزّل لمستوى الودن.'],e:['Sit upright with dumbbells at shoulder level.','Press up to full extension.','Lower to ear level.'],ta:'ضهرك لازق في المسند.',te:'Keep your back against the pad.'},
+arnold:{m:['الكتف كله','All three delts'],a:['ابدأ والدمبلز قدام وشك وكفك ناحيتك.','وإنت بتدفع لفوق لف كفك لقدام.','ارجع بنفس اللفة.'],e:['Start with dumbbells in front of your face, palms toward you.','Rotate your palms forward as you press up.','Reverse the rotation on the way down.'],ta:'ابدأ بوزن أخف من ضغط الأكتاف العادي.',te:'Use less weight than a regular press.'},
+lat_raise:{m:['الكتف الجانبي','Side delts'],a:['اقف والدمبلز جنبك والكوع مثني سنة.','ارفع دراعاتك لجنب لحد مستوى الكتف.','نزّل ببطء.'],e:['Stand with dumbbells at your sides, elbows slightly bent.','Raise your arms out to shoulder height.','Lower slowly.'],ta:'الوزن الخفيف بتحكم أحسن من التقيل بالمرجحة.',te:'Light and controlled beats heavy and swinging.'},
+front_raise:{m:['الكتف الأمامي','Front delts'],a:['اقف والدمبلز قدام فخذك.','ارفع دراع لقدام لحد مستوى الكتف.','نزّل بالراحة.'],e:['Stand with dumbbells in front of your thighs.','Raise your arms forward to shoulder height.','Lower slowly.'],ta:'ما تمرجحش جسمك.',te:'Don’t swing your body.'},
+rear_delt:{m:['الكتف الخلفي، منتصف الضهر','Rear delts, mid back'],a:['انحني لقدام وضهرك مفرود والدمبلز تحتك.','افتح دراعاتك لجنب لحد مستوى الكتف.','نزّل بتحكم.'],e:['Hinge forward with a flat back, dumbbells below you.','Raise your arms out to the sides to shoulder level.','Lower under control.'],ta:'ركّز تحس بخلف الكتف مش الترابيس.',te:'Feel it in the back of the shoulder, not the traps.'},
+cable_lat:{m:['الكتف الجانبي','Side delts'],a:['اقف جنب الكابل وامسك المقبض بالإيد البعيدة.','ارفع دراعك لجنب لحد مستوى الكتف.','نزّل بالراحة.'],e:['Stand side-on to a low cable, handle in the far hand.','Raise your arm out to shoulder height.','Lower slowly.'],ta:'الكابل بيحافظ على الشد طول الحركة.',te:'The cable keeps tension through the whole range.'},
+face_pull:{m:['الكتف الخلفي، الروتيتور كاف','Rear delts, rotator cuff'],a:['الكابل على مستوى وشك والحبل في إيدك.','اسحب الحبل ناحية وشك وافتح إيديك لجنب.','ارجع بتحكم.'],e:['Cable at face height, rope in hand.','Pull toward your face, spreading your hands apart.','Return under control.'],ta:'تمرين ممتاز لصحة الكتف، الوزن خفيف.',te:'Great for shoulder health; keep it light.'},
+shoulder_m:{m:['الكتف، التراي','Shoulders, triceps'],a:['اظبط الكرسي والمقابض عند كتفك.','ادفع لفوق.','نزّل بالراحة.'],e:['Set the seat so handles are at shoulder level.','Press up.','Lower slowly.'],ta:'آمن لو بتتمرن لوحدك من غير سبوتر.',te:'A safe choice when training without a spotter.'},
+pike_pushup:{m:['الكتف، التراي','Shoulders, triceps'],a:['اعمل شكل V مقلوب ووسطك لفوق.','نزّل راسك ناحية الأرض بين إيديك.','ادفع لفوق.'],e:['Form an inverted V with hips high.','Lower your head toward the floor between your hands.','Push back up.'],ta:'كل ما رجلك تبقى أعلى بتصعب.',te:'Raising your feet makes it harder.'},
+squat:{m:['الأمامية، الألوية، الضهر السفلي','Quads, glutes, lower back'],a:['البار على أعلى ضهرك ورجلك بعرض الكتف.','انزل لورا وتحت كأنك قاعد على كرسي لحد ما فخذك يوازي الأرض.','اطلع وادفع الأرض برجلك كلها.'],e:['Bar on your upper back, feet shoulder-width.','Sit back and down until thighs are parallel.','Drive up through your whole foot.'],ta:'الركبة ماشية في اتجاه صوابع رجلك وضهرك مفرود.',te:'Knees track over toes and your back stays neutral.'},
+front_squat:{m:['الأمامية، الكور','Quads, core'],a:['البار على كتفك الأمامي والكوع لفوق.','انزل وجسمك مفرود لحد تحت.','اطلع لفوق.'],e:['Bar on your front delts, elbows high.','Squat down with an upright torso.','Stand back up.'],ta:'لو الكوع وقع البار هيقع لقدام.',te:'If your elbows drop, the bar rolls forward.'},
+rdl:{m:['الخلفية، الألوية، أسفل الضهر','Hamstrings, glutes, lower back'],a:['اقف والبار قدام فخذك والركبة مثنية سنة.','ادفع وسطك لورا ونزّل البار على رجلك لحد ما تحس بشد في الخلفية.','ارجع لفوق بدفع الوسط لقدام.'],e:['Stand holding the bar at your thighs, knees soft.','Push your hips back and slide the bar down until your hamstrings stretch.','Drive your hips forward to stand.'],ta:'ضهرك مفرود والحركة من الوسط مش من الضهر.',te:'Back flat; the motion comes from the hips.'},
+sumo_dl:{m:['الألوية، الداخلية، الأمامية','Glutes, adductors, quads'],a:['رجلك واسعة وصوابعك لبرا، وامسك البار بين رجلك.','صدرك لفوق وادفع الأرض لبرا وارفع.','اقف مفرود ونزّل بتحكم.'],e:['Wide stance, toes out, grip inside your legs.','Chest up, push the floor apart and lift.','Stand tall, then lower under control.'],ta:'ركبك لبرا في اتجاه صوابعك.',te:'Push your knees out over your toes.'},
+hip_thrust:{m:['الألوية، الخلفية','Glutes, hamstrings'],a:['ضهرك على البنش والبار على وسطك.','ادفع وسطك لفوق لحد ما جسمك يبقى مستقيم من الكتف للركبة.','نزّل بالراحة.'],e:['Upper back on the bench, bar over your hips.','Drive your hips up until shoulders to knees are straight.','Lower slowly.'],ta:'اعصر الألوية ثانية فوق.',te:'Squeeze your glutes for a second at the top.'},
+lunge:{m:['الأمامية، الألوية','Quads, glutes'],a:['اقف والدمبلز جنبك.','خد خطوة كبيرة لقدام وانزل لحد ما الركبتين يبقوا 90°.','ادفع واتقدّم بالرجل التانية.'],e:['Stand with dumbbells at your sides.','Step forward and lower until both knees are at 90°.','Push off and step through with the other leg.'],ta:'جسمك مفرود والركبة ما تخبطش الأرض.',te:'Stay upright and don’t slam the back knee down.'},
+bulgarian:{m:['الأمامية، الألوية','Quads, glutes'],a:['رجل ورا على بنش والتانية لقدام.','انزل لحد ما فخذ الرجل القدام يوازي الأرض.','اطلع بدفع الرجل القدام.'],e:['Rear foot on a bench, front foot forward.','Lower until the front thigh is parallel.','Drive up through the front leg.'],ta:'ابدأ من غير وزن لحد ما توازنك يتظبط.',te:'Start bodyweight until your balance is solid.'},
+goblet:{m:['الأمامية، الألوية، الكور','Quads, glutes, core'],a:['امسك الدمبل قدام صدرك بإيديك الاتنين.','انزل سكوات والكوع بين ركبك.','اطلع لفوق.'],e:['Hold a dumbbell at your chest with both hands.','Squat down, elbows inside your knees.','Stand up.'],ta:'أحسن تمرين تتعلّم بيه شكل السكوات.',te:'A great way to learn squat form.'},
+step_up:{m:['الأمامية، الألوية','Quads, glutes'],a:['اقف قدام بوكس أو بنش.','حط رجل فوق واطلع بيها لحد ما تقف.','انزل بنفس الرجل بالراحة.'],e:['Stand facing a box or bench.','Place one foot up and stand on it.','Step down slowly with the same leg.'],ta:'ادفع بالرجل اللي فوق مش اللي تحت.',te:'Push through the top leg, not the bottom one.'},
+kb_swing:{m:['الألوية، الخلفية، الكور','Glutes, hamstrings, core'],a:['رجلك أعرض من كتفك والكيتل بيل بين رجلك.','ادفع وسطك لقدام بقوة والكيتل بيل يطلع لمستوى صدرك.','سيبه ينزل بين رجلك وانحني من الوسط.'],e:['Feet wider than shoulders, kettlebell between your legs.','Snap your hips forward so the bell floats to chest height.','Let it swing back between your legs as you hinge.'],ta:'القوة من الوسط مش من دراعك.',te:'Power comes from the hips, not the arms.'},
+leg_press:{m:['الأمامية، الألوية','Quads, glutes'],a:['رجلك على المنصة بعرض الكتف.','نزّل المنصة لحد ما ركبك تبقى 90°.','ادفع لفوق من غير ما تقفل الركبة.'],e:['Feet shoulder-width on the platform.','Lower until your knees reach about 90°.','Press up without locking your knees.'],ta:'وسطك ما يرفعش من على الكرسي تحت.',te:'Don’t let your hips lift off the seat at the bottom.'},
+hack_squat:{m:['الأمامية','Quads'],a:['ضهرك على المسند وكتافك تحت المساند.','انزل لحد ما فخذك يوازي المنصة.','ادفع لفوق.'],e:['Back on the pad, shoulders under the supports.','Lower until thighs are parallel to the platform.','Push back up.'],ta:'رجلك أوطى على المنصة بتركّز على الأمامية.',te:'Lower foot placement targets the quads more.'},
+leg_ext:{m:['الأمامية','Quads'],a:['اقعد والمسند فوق كعب رجلك.','افرد رجلك لقدام.','نزّل بالراحة.'],e:['Sit with the pad on your lower shins.','Extend your legs.','Lower slowly.'],ta:'اثبت ثانية فوق.',te:'Hold for a second at the top.'},
+leg_curl:{m:['الخلفية','Hamstrings'],a:['نام أو اقعد والمسند فوق كعبك.','اثني رجلك ناحية الألوية.','ارجع بتحكم.'],e:['Lie or sit with the pad above your heels.','Curl your heels toward your glutes.','Return under control.'],ta:'وسطك ما يرفعش من على الجهاز.',te:'Keep your hips down on the machine.'},
+abductor:{m:['الألوية الجانبية','Outer glutes'],a:['اقعد والمساند على جنب ركبك من برا.','افتح رجلك لبرا.','ارجع بالراحة.'],e:['Sit with pads on the outside of your knees.','Push your legs apart.','Return slowly.'],ta:'ميّل لقدام سنة عشان تحس بالألوية أكتر.',te:'Lean forward slightly to feel the glutes more.'},
+adductor:{m:['الداخلية','Inner thighs'],a:['اقعد والمساند جوه ركبك.','قفّل رجلك على بعض.','افتح بالراحة.'],e:['Sit with pads on the inside of your knees.','Squeeze your legs together.','Open slowly.'],ta:'ابدأ بمدى حركة مريح.',te:'Start with a comfortable range.'},
+calf:{m:['السمانة','Calves'],a:['مشط رجلك على الحافة والكعب برا.','اطلع على صوابعك لأعلى نقطة.','نزّل كعبك تحت الحافة لإطالة كاملة.'],e:['Balls of your feet on the edge, heels hanging.','Rise onto your toes as high as you can.','Lower your heels below the edge for a full stretch.'],ta:'الحركة بطيئة، السمانة بتحب المدى الكامل.',te:'Go slow; calves respond to full range.'},
+bw_squat:{m:['الأمامية، الألوية','Quads, glutes'],a:['اقف ورجلك بعرض الكتف ودراعك لقدام.','انزل لحد ما فخذك يوازي الأرض.','اطلع لفوق.'],e:['Stand shoulder-width, arms forward.','Squat until thighs are parallel.','Stand up.'],ta:'كعبك على الأرض طول الوقت.',te:'Keep your heels down.'},
+glute_bridge:{m:['الألوية، الخلفية','Glutes, hamstrings'],a:['نام على ضهرك وركبك مثنية ورجلك على الأرض.','ارفع وسطك لفوق.','نزّل بالراحة.'],e:['Lie on your back, knees bent, feet flat.','Lift your hips.','Lower slowly.'],ta:'اعصر الألوية فوق.',te:'Squeeze your glutes at the top.'},
+wall_sit:{m:['الأمامية','Quads'],a:['سند ضهرك على الحيطة.','انزل لحد ما ركبك تبقى 90°.','اثبت في الوضع ده.'],e:['Lean your back against a wall.','Slide down until your knees are at 90°.','Hold the position.'],ta:'ركبك فوق كعبك بالظبط.',te:'Knees directly above your ankles.'},
+bb_curl:{m:['الباي','Biceps'],a:['اقف والبار في إيدك وكفك لقدام.','اثني الكوع وارفع البار لصدرك.','نزّل بالراحة.'],e:['Stand holding the bar, palms forward.','Curl the bar up to your chest.','Lower slowly.'],ta:'الكوع ثابت جنب جسمك.',te:'Keep elbows pinned to your sides.'},
+skull:{m:['التراي','Triceps'],a:['نام على البنش والبار فوقك ودراعك مفرود.','اثني الكوع ونزّل البار ناحية جبهتك.','افرد لفوق.'],e:['Lie down with the bar above you, arms straight.','Bend at the elbows to lower the bar toward your forehead.','Extend back up.'],ta:'الكوع يفضل مشاور لفوق.',te:'Keep your elbows pointing up.'},
+cg_bench:{m:['التراي، الصدر','Triceps, chest'],a:['امسك البار بعرض كتفك أو أضيق سنة.','نزّل لأسفل صدرك والكوع قريب من جسمك.','ادفع لفوق.'],e:['Grip the bar shoulder-width or slightly narrower.','Lower to your lower chest, elbows tucked.','Press up.'],ta:'ما تضيّقش المسكة أوي عشان رسغك.',te:'Don’t go too narrow; it strains the wrists.'},
+db_curl:{m:['الباي','Biceps'],a:['اقف والدمبلز جنبك وكفك لقدام.','ارفع الدمبلز لكتفك.','نزّل بتحكم.'],e:['Stand with dumbbells at your sides, palms forward.','Curl up to your shoulders.','Lower under control.'],ta:'ما تمرجحش جسمك.',te:'Don’t swing.'},
+hammer:{m:['الباي، السواعد','Biceps, forearms'],a:['امسك الدمبلز وكفك ناحية جسمك.','ارفعهم لكتفك ومسكتك زي المطرقة.','نزّل بالراحة.'],e:['Hold dumbbells with palms facing your body.','Curl up with a neutral grip.','Lower slowly.'],ta:'بيكبّر الساعد والباي مع بعض.',te:'Builds forearms and biceps together.'},
+conc_curl:{m:['الباي','Biceps'],a:['اقعد وكوعك على جوه فخذك.','ارفع الدمبل لكتفك.','نزّل بالراحة.'],e:['Sit with your elbow against your inner thigh.','Curl the dumbbell to your shoulder.','Lower slowly.'],ta:'اعصر فوق ثانية.',te:'Squeeze at the top.'},
+oh_ext:{m:['التراي','Triceps'],a:['امسك دمبل بإيديك الاتنين فوق راسك.','نزّله ورا راسك بثني الكوع.','افرد لفوق.'],e:['Hold one dumbbell overhead with both hands.','Lower it behind your head by bending your elbows.','Extend back up.'],ta:'الكوع يفضل قريب من راسك.',te:'Keep elbows close to your head.'},
+wrist_curl:{m:['السواعد','Forearms'],a:['اقعد ودراعك على فخذك والرسغ برا.','ارفع الوزن بثني الرسغ لفوق.','نزّل بالراحة.'],e:['Sit with forearms on your thighs, wrists over the edge.','Curl the weight up by bending your wrist.','Lower slowly.'],ta:'وزن خفيف وعدّات كتير.',te:'Light weight, high reps.'},
+preacher:{m:['الباي','Biceps'],a:['دراعك على مسند البريتشر.','ارفع الوزن لفوق.','نزّل لحد ما دراعك يتفرد تقريباً.'],e:['Rest your upper arms on the preacher pad.','Curl the weight up.','Lower to near full extension.'],ta:'ما تقفلش الكوع على الآخر تحت بوزن تقيل.',te:'Don’t hard-lock the elbow at the bottom with heavy weight.'},
+pushdown:{m:['التراي','Triceps'],a:['اقف قدام الكابل والكوع جنب جسمك.','ادفع المقبض لتحت لحد ما دراعك يتفرد.','ارجع لحد مستوى صدرك.'],e:['Stand at the cable with elbows at your sides.','Push the handle down to full extension.','Return to chest height.'],ta:'الكوع ثابت مش بيتحرك لقدام.',te:'Elbows stay still; don’t let them drift forward.'},
+rope_oh:{m:['التراي (الرأس الطويلة)','Triceps (long head)'],a:['ادّي ضهرك للكابل والحبل فوق راسك.','افرد دراعك لقدام وفوق.','ارجع بالراحة.'],e:['Face away from the cable, rope behind your head.','Extend your arms forward and up.','Return slowly.'],ta:'بيشد التراي في وضع إطالة، ممتاز للحجم.',te:'Works the triceps in a stretched position, great for size.'},
+cable_curl:{m:['الباي','Biceps'],a:['اقف قدام الكابل والبار تحت.','ارفع البار لصدرك.','نزّل بتحكم.'],e:['Stand at a low cable with a bar.','Curl the bar to your chest.','Lower under control.'],ta:'الشد ثابت طول الحركة.',te:'Constant tension through the whole rep.'},
+bench_dips:{m:['التراي','Triceps'],a:['إيديك على حافة بنش وراك ورجلك لقدام.','نزّل وسطك بثني الكوع لحد 90°.','ادفع لفوق.'],e:['Hands on a bench behind you, legs forward.','Lower by bending your elbows to 90°.','Push back up.'],ta:'ضهرك قريب من البنش.',te:'Keep your back close to the bench.'},
+plank:{m:['الكور، البطن','Core, abs'],a:['اسند على ساعدك وصوابع رجلك.','جسمك خط مستقيم من راسك لكعبك.','اثبت وإنت شادد بطنك وألويتك.'],e:['Support yourself on forearms and toes.','Keep a straight line from head to heels.','Hold while bracing abs and glutes.'],ta:'وقت أقل بشكل صح أحسن من وقت أطول ووسطك نازل.',te:'Shorter with good form beats longer with sagging hips.'},
+side_plank:{m:['الجوانب، الكور','Obliques, core'],a:['نام على جنبك واسند على ساعد واحد.','ارفع وسطك لحد ما جسمك يبقى مستقيم.','اثبت وبعدين بدّل الجنب.'],e:['Lie on your side, propped on one forearm.','Lift your hips until your body is straight.','Hold, then switch sides.'],ta:'سجّل كل جنب كمجموعة.',te:'Log each side as its own set.'},
+hollow:{m:['البطن، الكور','Abs, core'],a:['نام على ضهرك ودراعك فوق راسك.','ارفع كتافك ورجلك من الأرض شوية.','اثبت وأسفل ضهرك لازق في الأرض.'],e:['Lie on your back, arms overhead.','Lift your shoulders and legs slightly off the floor.','Hold with your lower back pressed down.'],ta:'لو صعب اثني ركبك.',te:'Bend your knees to make it easier.'},
+crunch:{m:['البطن العليا','Upper abs'],a:['نام وركبك مثنية وإيدك عند ودانك.','ارفع كتافك من الأرض بعصر البطن.','نزّل بالراحة.'],e:['Lie with knees bent, hands by your ears.','Lift your shoulders by contracting your abs.','Lower slowly.'],ta:'ما تشدّش رقبتك بإيدك.',te:'Don’t pull on your neck.'},
+reverse_crunch:{m:['البطن السفلية','Lower abs'],a:['نام وركبك مثنية فوق.','ارفع وسطك من الأرض وقرّب ركبك لصدرك.','نزّل بالراحة.'],e:['Lie with knees bent and lifted.','Curl your hips off the floor toward your chest.','Lower slowly.'],ta:'الحركة صغيرة وبتحكم.',te:'Small, controlled movement.'},
+bicycle:{m:['الجوانب، البطن','Obliques, abs'],a:['نام وإيدك عند راسك ورجلك مرفوعة.','قرّب كوعك من الركبة العكسية.','بدّل الجنبين.'],e:['Lie with hands by your head, legs raised.','Bring an elbow toward the opposite knee.','Alternate sides.'],ta:'لف بكتفك مش بكوعك بس.',te:'Rotate from your shoulders, not just the elbows.'},
+situp:{m:['البطن، مثنية الفخذ','Abs, hip flexors'],a:['نام وركبك مثنية ورجلك ثابتة.','اطلع لحد ما تقعد.','انزل بالراحة.'],e:['Lie with knees bent, feet anchored.','Sit all the way up.','Lower slowly.'],ta:'ما تشدّش راسك بإيدك.',te:'Don’t yank your head.'},
+leg_raise:{m:['البطن السفلية','Lower abs'],a:['نام على ضهرك ورجلك مفرودة.','ارفع رجلك لفوق لحد 90°.','نزّل بالراحة من غير ما تلمس الأرض.'],e:['Lie flat, legs straight.','Raise your legs to 90°.','Lower slowly without touching the floor.'],ta:'أسفل ضهرك لازق في الأرض.',te:'Keep your lower back on the floor.'},
+hlr:{m:['البطن السفلية، مثنية الفخذ','Lower abs, hip flexors'],a:['اتعلّق في العقلة.','ارفع رجلك مفرودة لقدام لحد مستوى الوسط أو أعلى.','نزّل بتحكم من غير مرجحة.'],e:['Hang from the bar.','Raise your straight legs to hip height or higher.','Lower under control without swinging.'],ta:'لو صعب ابدأ برفع الركب.',te:'Start with knee raises if it’s too hard.'},
+knee_raise:{m:['البطن السفلية','Lower abs'],a:['اتعلّق في العقلة أو الجهاز.','ارفع ركبك لصدرك.','نزّل بالراحة.'],e:['Hang from a bar or captain’s chair.','Bring your knees to your chest.','Lower slowly.'],ta:'لف وسطك لفوق في الآخر.',te:'Curl your pelvis up at the top.'},
+vup:{m:['البطن كلها','Full abs'],a:['نام ودراعك فوق راسك ورجلك مفرودة.','ارفع إيدك ورجلك مع بعض لحد ما يتقابلوا.','نزّل بالراحة.'],e:['Lie with arms overhead, legs straight.','Lift arms and legs together to meet.','Lower slowly.'],ta:'تمرين متقدم، ابدأ بعدد قليل.',te:'Advanced; start with low reps.'},
+flutter:{m:['البطن السفلية','Lower abs'],a:['نام وإيدك تحت وسطك.','ارفع رجلك شوية من الأرض.','حرّك رجلك فوق وتحت بالتبادل.'],e:['Lie with hands under your hips.','Lift your legs slightly off the floor.','Kick them up and down alternately.'],ta:'أسفل ضهرك ثابت على الأرض.',te:'Keep your lower back down.'},
+mountain:{m:['الكور، الكارديو','Core, cardio'],a:['ابدأ في وضع الضغط.','قرّب ركبة لصدرك وارجعها.','بدّل بسرعة.'],e:['Start in a push-up position.','Drive one knee to your chest and back.','Alternate quickly.'],ta:'وسطك على مستوى كتفك.',te:'Keep your hips level with your shoulders.'},
+dead_bug:{m:['الكور العميق','Deep core'],a:['نام ودراعك لفوق وركبك 90°.','افرد إيد ورجل عكسيين لحد ما يقربوا من الأرض.','ارجع وبدّل.'],e:['Lie with arms up and knees at 90°.','Extend the opposite arm and leg toward the floor.','Return and switch.'],ta:'أسفل ضهرك ما يرفعش من الأرض.',te:'Your lower back must stay on the floor.'},
+bird_dog:{m:['الكور، أسفل الضهر','Core, lower back'],a:['ابدأ على إيديك وركبك.','افرد إيد ورجل عكسيين.','اثبت ثانيتين وبدّل.'],e:['Start on hands and knees.','Extend the opposite arm and leg.','Hold two seconds and switch.'],ta:'وسطك ما يلفّش.',te:'Don’t let your hips rotate.'},
+superman:{m:['أسفل الضهر، الألوية','Lower back, glutes'],a:['نام على بطنك ودراعك لقدام.','ارفع إيدك ورجلك من الأرض.','اثبت ونزّل.'],e:['Lie face down, arms forward.','Lift your arms and legs off the floor.','Hold, then lower.'],ta:'بصّ للأرض عشان رقبتك.',te:'Look at the floor to protect your neck.'},
+russian_twist:{m:['الجوانب','Obliques'],a:['اقعد وميّل لورا سنة ورجلك مرفوعة أو على الأرض.','امسك الدمبل ولف جسمك يمين وشمال.','ثبّت رجلك.'],e:['Sit leaning back slightly, feet up or down.','Hold a dumbbell and rotate side to side.','Keep your legs still.'],ta:'اللف من الجذع مش من الدراع.',te:'Rotate from your torso, not your arms.'},
+cable_crunch:{m:['البطن','Abs'],a:['اركع قدام الكابل والحبل عند راسك.','انحني لتحت بعصر البطن.','ارجع بالراحة.'],e:['Kneel at the cable with the rope by your head.','Crunch down by contracting your abs.','Return slowly.'],ta:'وسطك ثابت، الحركة من البطن.',te:'Hips stay still; the motion is from the abs.'},
+woodchop:{m:['الجوانب، الكور','Obliques, core'],a:['اقف جنب الكابل والمقبض فوق.','اسحبه بالوراب لتحت ناحية الركبة التانية.','ارجع بتحكم.'],e:['Stand side-on, handle set high.','Pull diagonally down across your body.','Return under control.'],ta:'لف على مشط رجلك اللي ورا.',te:'Pivot on your back foot.'},
+pallof:{m:['الكور (ضد اللف)','Core (anti-rotation)'],a:['اقف جنب الكابل والمقبض عند صدرك.','ادفع إيدك لقدام وقاوم إن الكابل يلفّك.','ارجع لصدرك.'],e:['Stand side-on with the handle at your chest.','Press your hands forward and resist the twist.','Bring them back.'],ta:'الهدف إنك ما تتحركش.',te:'The goal is to not move.'},
+ab_wheel:{m:['البطن، الكور','Abs, core'],a:['اركع وامسك العجلة قدامك.','زقّها لقدام بالراحة وجسمك مستقيم.','ارجعها بعصر البطن.'],e:['Kneel holding the wheel.','Roll forward slowly with a straight body.','Pull back by contracting your abs.'],ta:'ابدأ بمدى قصير.',te:'Start with a short range.'},
+farmer:{m:['القبضة، الترابيس، الكور','Grip, traps, core'],a:['امسك دمبلز تقيلة جنبك.','امشي بخطوات قصيرة وجسمك مفرود.','نزّل الوزن بحذر.'],e:['Pick up heavy dumbbells at your sides.','Walk with short steps, standing tall.','Set the weights down carefully.'],ta:'سجّل الوقت اللي مشيته.',te:'Log the time you walked.'},
+s_hamstring:{m:['الخلفية','Hamstrings'],a:['حط كعب رجلك على سطح واطي ورجلك مفرودة.','ميّل لقدام من الوسط وضهرك مفرود.','اثبت وتنفّس.'],e:['Put a heel on a low surface, leg straight.','Hinge forward from the hips with a flat back.','Hold and breathe.'],ta:'شد خفيف مش ألم.',te:'Mild tension, never pain.'},
+s_quad:{m:['الأمامية','Quads'],a:['اقف وامسك حاجة للتوازن.','امسك مشط رجلك وقرّب كعبك من الألوية.','ركبك جنب بعض.'],e:['Stand holding something for balance.','Grab your foot and pull the heel toward your glutes.','Keep your knees together.'],ta:'اعصر الألوية عشان الإطالة تزيد.',te:'Squeeze your glutes to deepen it.'},
+s_hipflexor:{m:['مثنية الفخذ','Hip flexors'],a:['انزل على ركبة واحدة والرجل التانية قدام.','ادفع وسطك لقدام بالراحة.','اثبت وبعدين بدّل.'],e:['Kneel on one knee, other foot forward.','Gently push your hips forward.','Hold, then switch.'],ta:'مهمة لو قاعد كتير على المكتب.',te:'Important if you sit a lot.'},
+s_couch:{m:['الأمامية، مثنية الفخذ','Quads, hip flexors'],a:['حط ركبتك جنب الحيطة ومشط رجلك على الحيطة.','الرجل التانية قدامك.','اطلع بجسمك لفوق بالراحة.'],e:['Knee near a wall with your shin up the wall.','Other foot forward.','Slowly bring your torso upright.'],ta:'إطالة قوية، ادخلها بالتدريج.',te:'Intense; ease into it.'},
+s_pigeon:{m:['الألوية، الحوض','Glutes, hips'],a:['رجل قدامك مثنية والتانية مفرودة لورا.','انزل بجسمك لقدام فوق الرجل اللي قدام.','اثبت وبدّل.'],e:['Front leg bent across, back leg extended.','Fold your torso forward over the front leg.','Hold and switch.'],ta:'حط مخدة تحت وسطك لو مش مرتاح.',te:'Put a cushion under your hip if needed.'},
+s_figure4:{m:['الألوية','Glutes'],a:['نام وحط كاحل على ركبة الرجل التانية.','اسحب الرجل اللي تحت ناحية صدرك.','اثبت وبدّل.'],e:['Lie down, cross one ankle over the other knee.','Pull the bottom leg toward your chest.','Hold and switch.'],ta:'أسهل من الحمامة.',te:'An easier alternative to pigeon.'},
+s_9090:{m:['الحوض','Hips'],a:['اقعد ورجل قدام ورجل جنب، الاتنين 90°.','ميّل لقدام فوق الرجل اللي قدام.','بدّل الجنب.'],e:['Sit with one leg in front and one to the side, both at 90°.','Lean forward over the front leg.','Switch sides.'],ta:'ضهرك مفرود.',te:'Keep your back straight.'},
+s_butterfly:{m:['الداخلية، الحوض','Inner thighs, hips'],a:['اقعد وقفّل بطون رجلك على بعض.','امسك رجلك ونزّل ركبك ناحية الأرض.','ميّل لقدام سنة.'],e:['Sit with the soles of your feet together.','Hold your feet and let your knees drop.','Lean forward slightly.'],ta:'ما تضغطش على ركبك بقوة.',te:'Don’t force your knees down.'},
+s_forward:{m:['الخلفية، أسفل الضهر','Hamstrings, lower back'],a:['اقعد ورجلك مفرودة قدامك.','ميّل لقدام ناحية صوابع رجلك.','اثبت وتنفّس.'],e:['Sit with legs straight in front.','Reach toward your toes.','Hold and breathe.'],ta:'اثني ركبك سنة لو الخلفية مشدودة.',te:'Bend your knees slightly if tight.'},
+s_calf:{m:['السمانة','Calves'],a:['اسند إيديك على الحيطة ورجل لورا مفرودة.','كعبك على الأرض.','ميّل لقدام لحد ما تحس بالشد.'],e:['Hands on the wall, one leg back straight.','Keep the heel down.','Lean in until you feel the stretch.'],ta:'اثني الركبة شوية عشان تطوّل العضلة التحتانية.',te:'Bend the knee slightly to target the lower calf.'},
+s_child:{m:['الضهر، الحوض','Back, hips'],a:['اركع واقعد على كعبك.','مد دراعك لقدام ونزّل صدرك للأرض.','تنفّس بعمق.'],e:['Kneel and sit back on your heels.','Reach your arms forward and lower your chest.','Breathe deeply.'],ta:'وضع راحة ممتاز بين المجموعات.',te:'A great rest position.'},
+s_catcow:{m:['العمود الفقري','Spine'],a:['ابدأ على إيديك وركبك.','قوّس ضهرك لفوق ودخّل راسك.','نزّل ضهرك وارفع راسك، وكرّر.'],e:['Start on hands and knees.','Round your back up and tuck your head.','Drop your back and lift your head; repeat.'],ta:'الحركة مع النفس.',te:'Move with your breath.'},
+s_cobra:{m:['البطن، أسفل الضهر','Abs, lower back'],a:['نام على بطنك وإيدك جنب صدرك.','ارفع صدرك بإيدك ووسطك على الأرض.','اثبت.'],e:['Lie face down, hands by your chest.','Press your chest up, hips on the floor.','Hold.'],ta:'ما ترفعش لدرجة الألم في الضهر.',te:'Don’t push into back pain.'},
+s_twist:{m:['العمود الفقري، الجوانب','Spine, obliques'],a:['نام على ضهرك ودراعك مفرود.','نزّل ركبك المثنية ناحية جنب واحد.','بص للناحية التانية واثبت.'],e:['Lie on your back, arms out.','Drop your bent knees to one side.','Look the other way and hold.'],ta:'كتافك على الأرض.',te:'Keep your shoulders down.'},
+s_chest:{m:['الصدر، الكتف الأمامي','Chest, front delts'],a:['حط ساعدك على حلق الباب والكوع على مستوى الكتف.','اتقدّم خطوة لقدام.','اثبت وبدّل.'],e:['Forearm on a door frame, elbow at shoulder height.','Step forward.','Hold and switch.'],ta:'ممتاز بعد يوم صدر.',te:'Great after chest day.'},
+s_crossbody:{m:['الكتف الخلفي','Rear delts'],a:['هات دراعك قدام صدرك.','اسحبه بالإيد التانية من فوق الكوع.','اثبت وبدّل.'],e:['Bring one arm across your chest.','Pull it in with the other hand above the elbow.','Hold and switch.'],ta:'ما تضغطش على الكوع نفسه.',te:'Don’t press on the elbow joint.'},
+s_triceps:{m:['التراي','Triceps'],a:['ارفع دراعك فوق واثني الكوع.','اسحب الكوع بالإيد التانية.','اثبت وبدّل.'],e:['Raise an arm and bend the elbow.','Pull the elbow with the other hand.','Hold and switch.'],ta:'راسك مفرودة.',te:'Keep your head neutral.'},
+s_lat:{m:['اللاتس','Lats'],a:['امسك حاجة ثابتة على مستوى الوسط.','ارجع بوسطك لورا ودراعك مفرود.','حس بالشد على جنب ضهرك.'],e:['Hold something fixed at waist height.','Sit your hips back with arms straight.','Feel the stretch along your side.'],ta:'ممكن تعملها على البنش بركبك.',te:'You can also do it kneeling at a bench.'},
+s_neck:{m:['الرقبة، الترابيس','Neck, upper traps'],a:['اقعد مفرود.','ميّل ودنك ناحية كتفك.','اثبت وبدّل.'],e:['Sit tall.','Tilt your ear toward your shoulder.','Hold and switch.'],ta:'بالراحة جداً.',te:'Go very gently.'},
+s_wgs:{m:['الحوض، الخلفية، الصدر','Hips, hamstrings, thoracic spine'],a:['خد خطوة لانج كبيرة.','حط الإيد اللي جوه على الأرض ولف الدراع التاني لفوق.','ارجع وبدّل.'],e:['Step into a deep lunge.','Put the inside hand down and rotate the other arm up.','Return and switch.'],ta:'إحماء ممتاز قبل أي تمرين.',te:'An excellent warm-up before any workout.'},
+s_hang:{m:['الضهر، الكتف، القبضة','Back, shoulders, grip'],a:['اتعلّق في العقلة ودراعك مفرود.','سيب جسمك يرتخي.','اثبت.'],e:['Hang from the bar with straight arms.','Let your body relax.','Hold.'],ta:'بيفك الضهر ويقوّي القبضة.',te:'Decompresses the spine and builds grip.'},
+s_band_shoulder:{m:['الكتف، الصدر','Shoulders, chest'],a:['امسك الأستك واسع قدامك.','لفّه فوق راسك لورا ودراعك مفرود.','ارجع لقدام.'],e:['Hold a band wide in front of you.','Arc it overhead and behind you, arms straight.','Bring it back.'],ta:'وسّع المسكة لو حسيت بضغط.',te:'Widen your grip if it feels tight.'},
+};
+const FP_SLUGS = { bench:'bench-press', incline_bb:'incline-barbell-bench-press', fly:'pec-deck-fly', low_cable_fly:'low-cable-crossover', cable_fly:'high-cable-crossover', db_fly:'dumbbell-fly' };
+
+</script>
+<script>
+(() => {
+'use strict';
+
+/* ---------- catalog ---------- */
+const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','other'];
+const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
+const MODES = ['wr','r','t'];
+const SET_TYPES = ['w','f','d'];
+const MKEYS = [['weight','kg'],['waist','cm'],['fat','pct'],['chest','cm'],['arm','cm'],['thigh','cm'],['hips','cm']];
+const MUNIT = Object.fromEntries(MKEYS);
+const keepT = x => SET_TYPES.includes(x.t) ? { t:x.t } : {};
+const PRESETS = [
+  // chest
+  ['bench','chest','barbell','بنش برس بار','Barbell Bench Press'],
+  ['incline_bb','chest','barbell','بنش عالي بار','Incline Barbell Bench Press'],
+  ['decline_bb','chest','barbell','بنش نازل بار','Decline Bench Press'],
+  ['db_bench','chest','dumbbell','بنش مستوي دمبلز','Dumbbell Bench Press'],
+  ['incline_db','chest','dumbbell','بنش عالي دمبلز','Incline Dumbbell Press'],
+  ['db_fly','chest','dumbbell','فتح دمبلز','Dumbbell Fly'],
+  ['chest_press','chest','machine','جهاز تشيست برس','Machine Chest Press'],
+  ['fly','chest','machine','جهاز فراشة','Pec Deck'],
+  ['cable_fly','chest','cable','كروس أوفر كابل','Cable Crossover'],
+  ['low_cable_fly','chest','cable','كابل من تحت لفوق','Low to High Cable Fly'],
+  ['dips','chest','bodyweight','متوازي (ديبس)','Chest Dips'],
+  ['pushup','chest','bodyweight','ضغط (بوش أب)','Push-up'],
+  ['incline_pushup','chest','bodyweight','ضغط مايل','Incline Push-up'],
+  // back
+  ['deadlift','back','barbell','ديدليفت','Deadlift'],
+  ['bb_row','back','barbell','تجديف بار','Barbell Row'],
+  ['tbar_row','back','barbell','تي بار','T-Bar Row'],
+  ['db_row','back','dumbbell','تجديف دمبل بذراع','One-Arm Dumbbell Row'],
+  ['db_shrug','back','dumbbell','ترابيس دمبلز','Dumbbell Shrug'],
+  ['lat_pd','back','cable','سحب عالي','Lat Pulldown'],
+  ['close_pd','back','cable','سحب عالي ضيق','Close-Grip Lat Pulldown'],
+  ['cable_row','back','cable','سحب أرضي كابل','Seated Cable Row'],
+  ['straight_pd','back','cable','بول أوفر كابل','Straight-Arm Pulldown'],
+  ['machine_row','back','machine','جهاز تجديف','Machine Row'],
+  ['back_ext','back','machine','ظهر سفلي (هايبر)','Back Extension'],
+  ['pullup','back','bodyweight','عقلة','Pull-up'],
+  ['chinup','back','bodyweight','عقلة عكسي','Chin-up'],
+  ['inv_row','back','bodyweight','تجديف معكوس','Inverted Row'],
+  // shoulders
+  ['ohp','shoulders','barbell','ضغط أكتاف بار','Overhead Press'],
+  ['upright_row','shoulders','barbell','سحب لفوق (أبرايت رو)','Upright Row'],
+  ['db_sp','shoulders','dumbbell','ضغط أكتاف دمبلز','Seated Dumbbell Press'],
+  ['arnold','shoulders','dumbbell','أرنولد برس','Arnold Press'],
+  ['lat_raise','shoulders','dumbbell','رفرفة جانبي','Lateral Raise'],
+  ['front_raise','shoulders','dumbbell','رفرفة أمامي','Front Raise'],
+  ['rear_delt','shoulders','dumbbell','رفرفة خلفي','Rear Delt Fly'],
+  ['cable_lat','shoulders','cable','رفرفة جانبي كابل','Cable Lateral Raise'],
+  ['face_pull','shoulders','cable','فيس بول','Face Pull'],
+  ['shoulder_m','shoulders','machine','جهاز أكتاف','Machine Shoulder Press'],
+  ['pike_pushup','shoulders','bodyweight','ضغط بايك','Pike Push-up'],
+  // legs
+  ['squat','legs','barbell','سكوات','Back Squat'],
+  ['front_squat','legs','barbell','فرونت سكوات','Front Squat'],
+  ['rdl','legs','barbell','ديدليفت روماني','Romanian Deadlift'],
+  ['sumo_dl','legs','barbell','سومو ديدليفت','Sumo Deadlift'],
+  ['hip_thrust','legs','barbell','هيب ثرست','Hip Thrust'],
+  ['lunge','legs','dumbbell','طعنات (لانج)','Walking Lunge'],
+  ['bulgarian','legs','dumbbell','بلغاري سبليت سكوات','Bulgarian Split Squat'],
+  ['goblet','legs','dumbbell','جوبلت سكوات','Goblet Squat'],
+  ['step_up','legs','dumbbell','طلوع على بوكس','Step-up'],
+  ['kb_swing','legs','kettlebell','كيتل بيل سوينج','Kettlebell Swing'],
+  ['leg_press','legs','machine','ليج برس','Leg Press'],
+  ['hack_squat','legs','machine','هاك سكوات','Hack Squat'],
+  ['leg_ext','legs','machine','رجل أمامي','Leg Extension'],
+  ['leg_curl','legs','machine','رجل خلفي','Leg Curl'],
+  ['abductor','legs','machine','جهاز تبعيد (خارجي)','Hip Abduction Machine'],
+  ['adductor','legs','machine','جهاز تقريب (داخلي)','Hip Adduction Machine'],
+  ['calf','legs','machine','سمانة','Calf Raise'],
+  ['bw_squat','legs','bodyweight','سكوات وزن الجسم','Bodyweight Squat'],
+  ['glute_bridge','legs','bodyweight','جلوت بريدج','Glute Bridge'],
+  ['wall_sit','legs','bodyweight','قعدة الحيطة','Wall Sit','t'],
+  // arms
+  ['bb_curl','arms','barbell','باي بار','Barbell Curl'],
+  ['skull','arms','barbell','تراي بار نايم','Skull Crusher'],
+  ['cg_bench','arms','barbell','بنش ضيق','Close-Grip Bench Press'],
+  ['db_curl','arms','dumbbell','باي دمبلز','Dumbbell Curl'],
+  ['hammer','arms','dumbbell','هامر','Hammer Curl'],
+  ['conc_curl','arms','dumbbell','باي تركيز','Concentration Curl'],
+  ['oh_ext','arms','dumbbell','تراي دمبل فوق الراس','Overhead Triceps Extension'],
+  ['wrist_curl','arms','dumbbell','سواعد','Wrist Curl'],
+  ['preacher','arms','machine','باي ارتكاز (بريتشر)','Preacher Curl'],
+  ['pushdown','arms','cable','تراي كابل','Triceps Pushdown'],
+  ['rope_oh','arms','cable','تراي حبل فوق الراس','Overhead Cable Triceps Extension'],
+  ['cable_curl','arms','cable','باي كابل','Cable Curl'],
+  ['bench_dips','arms','bodyweight','ديبس على بنش','Bench Dips'],
+  // core
+  ['plank','core','bodyweight','بلانك','Plank','t'],
+  ['side_plank','core','bodyweight','بلانك جانبي','Side Plank','t'],
+  ['hollow','core','bodyweight','هولو هولد','Hollow Body Hold','t'],
+  ['crunch','core','bodyweight','كرانش','Crunch'],
+  ['reverse_crunch','core','bodyweight','كرانش عكسي','Reverse Crunch'],
+  ['bicycle','core','bodyweight','بسكلتة','Bicycle Crunch'],
+  ['situp','core','bodyweight','بطن كامل (سيت أب)','Sit-up'],
+  ['leg_raise','core','bodyweight','رفع رجلين نايم','Lying Leg Raise'],
+  ['hlr','core','bodyweight','رفع رجلين معلّق','Hanging Leg Raise'],
+  ['knee_raise','core','bodyweight','رفع ركب معلّق','Hanging Knee Raise'],
+  ['vup','core','bodyweight','في أب','V-up'],
+  ['flutter','core','bodyweight','رفرفة رجلين','Flutter Kicks','t'],
+  ['mountain','core','bodyweight','متسلق الجبل','Mountain Climbers','t'],
+  ['dead_bug','core','bodyweight','ديد باج','Dead Bug'],
+  ['bird_dog','core','bodyweight','بيرد دوج','Bird Dog'],
+  ['superman','core','bodyweight','سوبرمان','Superman Exercise'],
+  ['russian_twist','core','dumbbell','روسيان تويست','Russian Twist'],
+  ['cable_crunch','core','cable','كرانش كابل','Cable Crunch'],
+  ['woodchop','core','cable','وود تشوب كابل','Cable Woodchopper'],
+  ['pallof','core','cable','بالوف برس','Pallof Press'],
+  ['ab_wheel','core','other','عجلة البطن','Ab Wheel Rollout'],
+  ['farmer','core','dumbbell','مشية الفلاح','Farmer’s Carry','t'],
+  // stretches
+  ['s_hamstring','stretch','bodyweight','إطالة الخلفية','Standing Hamstring Stretch','t'],
+  ['s_quad','stretch','bodyweight','إطالة الأمامية','Standing Quad Stretch','t'],
+  ['s_hipflexor','stretch','bodyweight','إطالة مثنية الفخذ','Kneeling Hip Flexor Stretch','t'],
+  ['s_couch','stretch','bodyweight','كاوتش ستريتش','Couch Stretch','t'],
+  ['s_pigeon','stretch','bodyweight','وضعية الحمامة','Pigeon Pose','t'],
+  ['s_figure4','stretch','bodyweight','إطالة الألوية (رقم 4)','Figure Four Glute Stretch','t'],
+  ['s_9090','stretch','bodyweight','إطالة الحوض 90/90','90/90 Hip Stretch','t'],
+  ['s_butterfly','stretch','bodyweight','الفراشة','Butterfly Stretch','t'],
+  ['s_forward','stretch','bodyweight','انحناء أمامي جالس','Seated Forward Fold','t'],
+  ['s_calf','stretch','bodyweight','إطالة السمانة على الحيطة','Wall Calf Stretch','t'],
+  ['s_child','stretch','bodyweight','وضعية الطفل','Child’s Pose','t'],
+  ['s_catcow','stretch','bodyweight','القطة والجمل','Cat Cow Stretch','t'],
+  ['s_cobra','stretch','bodyweight','الكوبرا','Cobra Stretch','t'],
+  ['s_twist','stretch','bodyweight','لف العمود الفقري نايم','Supine Spinal Twist','t'],
+  ['s_chest','stretch','bodyweight','إطالة الصدر على الباب','Doorway Chest Stretch','t'],
+  ['s_crossbody','stretch','bodyweight','إطالة الكتف عرضي','Cross-Body Shoulder Stretch','t'],
+  ['s_triceps','stretch','bodyweight','إطالة التراي فوق الراس','Overhead Triceps Stretch','t'],
+  ['s_lat','stretch','bodyweight','إطالة الظهر (لاتس)','Lat Stretch','t'],
+  ['s_neck','stretch','bodyweight','إطالة الرقبة','Neck Stretch','t'],
+  ['s_wgs','stretch','bodyweight','أعظم إطالة في العالم','World’s Greatest Stretch','t'],
+  ['s_hang','stretch','bodyweight','تعليق حر','Dead Hang','t'],
+  ['s_band_shoulder','stretch','band','فتح الكتف بالأستك','Band Shoulder Dislocates'],
+].map(([id,g,e,ar,en,m]) => ({id, g, e, ar, en, ...(m ? { m } : {})}));
+const PRESET_MAP = new Map(PRESETS.map(p => [p.id, p]));
+
+/* ---------- i18n ---------- */
+const I18N = {
+  ar: {
+    appName:'سجل التمرين', navHome:'الرئيسية', navRoutines:'الروتينات', navHistory:'السجل', navSettings:'الإعدادات',
+    start:'ابدأ تمرين', resume:'كمّل الجلسة', activeNow:'جلسة شغالة', readyTitle:'يلا نتمرن؟',
+    thisWeek:'الأسبوع ده', statSessions:'جلسات', statSets:'مجموعات', statVolume:'كجم إجمالي',
+    exN:n=>`${n} تمرين`, setsN:n=>`${n} مجموعة`, kg:'كجم', reps:'عدّات', setH:'#',
+    recent:'آخر الجلسات', seeAll:'الكل',
+    emptyHome:'مفيش جلسات متسجلة لسه. اضغط «ابدأ تمرين» وسجّل أول مجموعة.',
+    chooseStart:'تبدأ بإيه؟', emptySession:'جلسة فاضية', emptySessionHint:'تختار التمارين وإنت بتتمرن',
+    freeSession:'تمرين حر', finish:'إنهاء', done:'تم',
+    sessionNote:'ملاحظات الجلسة', notePh:'إزاي كان التمرين النهارده؟', exNotePh:'ملاحظة على التمرين ده',
+    addSet:'+ مجموعة', removeSet:'− آخر مجموعة', note:'ملاحظة', addExercise:'+ أضف تمرين',
+    last:'آخر مرة', noLast:'أول مرة تسجّل التمرين ده', plan:'الهدف',
+    rest:'راحة', skip:'تخطّي',
+    discard:'إلغاء الجلسة', discardQ:'تلغي الجلسة دي؟ كل اللي اتسجل فيها هيتمسح.',
+    deleteSession:'امسح الجلسة', deleteSessionQ:'تمسح الجلسة دي من السجل؟',
+    emptyFinishQ:'مفيش مجموعات متسجلة. تلغي الجلسة؟',
+    removeExQ:n=>`تشيل «${n}»؟`, saved:'الجلسة اتحفظت 💪', deleted:'اتمسحت',
+    cancel:'رجوع', del:'امسح', yes:'أيوه', remove:'شيل',
+    search:'دوّر على تمرين', addCustom:n=>`+ أضف «${n}»`, pickTitle:'اختار تمرين', inSession:'موجود',
+    fMuscle:'العضلة', fEquip:'الأداة', all:'الكل', noMatch:'مفيش تمارين بالفلتر ده.',
+    g_chest:'صدر', g_back:'ظهر', g_shoulders:'أكتاف', g_legs:'رجل', g_arms:'ذراع', g_core:'بطن وكور', g_stretch:'إطالات', g_other:'أخرى',
+    e_barbell:'بار', e_dumbbell:'دمبلز', e_cable:'كابل', e_machine:'جهاز', e_bodyweight:'وزن الجسم', e_kettlebell:'كيتل بيل', e_band:'أستك مقاومة', e_other:'أداة أخرى',
+    m_wr:'وزن × عدّات', m_r:'عدّات بس', m_t:'وقت (ثواني)', secs:'ثانية', secShort:'ث',
+    video:'شوف الطريقة', restOf:n=>`راحة ${n}`, restOff:'من غير راحة', restTitle:n=>`الراحة بعد كل مجموعة · ${n}`, restUseDefault:n=>`الافتراضي (${n})`, restHint:'الإعداد ده للتمرين ده بس، وبيتطبّق في كل الجلسات والروتينات.',
+    newRoutine:'+ روتين جديد', editRoutine:'تعديل الروتين', createRoutine:'روتين جديد',
+    routinesEmpty:'اعمل روتين لكل يوم تمرين، مثلاً «اليوم الأول» و«اليوم التاني»، وابدأ بيه الجلسة فتنزل تمارينه جاهزة.',
+    routineName:'اسم الروتين', routineNamePh:'مثلاً: اليوم الأول', exercises:'التمارين',
+    routineSetsHint:'حط لكل مجموعة العدّات والوزن اللي ناوي عليه. هيظهروا لك في الجلسة كهدف.',
+    save:'حفظ', deleteRoutine:'امسح الروتين', deleteRoutineQ:n=>`تمسح روتين «${n}»؟ الجلسات القديمة مش هتتأثر.`,
+    routineNeedsName:'اكتب اسم للروتين الأول', noExercisesYet:'لسه مفيش تمارين في الروتين ده',
+    routineSaved:'الروتين اتحفظ', removeThisSet:'شيل المجموعة',
+    startR:'ابدأ', edit:'تعديل', startThis:'احفظ وابدأ الروتين', activeExists:'عندك جلسة شغالة، كمّلها الأول',
+    pendingQ:n=>`فيه ${n} مجموعة فيها أرقام بس ما اتعلّمش عليها ✓. تسجّلها ولا تشيلها؟`, logThem:'سجّلها', dropThem:'شيلها',
+    historyEmpty:'الجلسات اللي تخلّصها هتظهر هنا.',
+    language:'اللغة', restDefault:'الراحة الافتراضية (للتمارين اللي مالهاش إعداد خاص)', sec:n=>`${n} ث`,
+    myExercises:'تمارين أضفتها', myExercisesEmpty:'التمارين اللي تضيفها بنفسك من شاشة اختيار التمرين هتظهر هنا.',
+    deleteExQ:n=>`تمسح «${n}» من القائمة؟ هيفضل ظاهر في الجلسات القديمة.`,
+    backup:'الباك أب', backupHint:'احفظ نسخة من كل جلساتك وروتيناتك في ملف، وترجّعها وقت ما تحب.',
+    export:'تصدير ملف', import:'استيراد ملف', pasteImport:'أو الصق محتوى ملف الباك أب هنا', importBtn:'استيراد النص',
+    importQ:n=>`هيتضاف ${n} جلسة من الملف، والروتينات والإعدادات هتتبدّل باللي في الملف. نكمّل؟`,
+    imported:'تم الاستيراد', badFile:'الملف ده مش باك أب من سجل التمرين.',
+    exportFallback:'انسخ النص ده واحفظه في ملف أو ابعته لنفسك:', copy:'نسخ', copied:'اتنسخ', exported:'الملف اتحفظ',
+    storeCloud:'محفوظ في حسابك', storeLocal:'محفوظ على الموبايل', storeLoading:'بيحمّل…', storeSaving:'بيحفظ…',
+    storeLocalHint:'بياناتك محفوظة على الموبايل ده بس. اعمل تصدير ملف من وقت للتاني واحفظه في مكان آمن.',
+    storeCloudHint:'بياناتك محفوظة في حسابك على Claude، وتظهر لك لوحدك من أي جهاز.',
+    saveFail:'الحفظ ما نجحش. جرّب تاني بعد شوية.',
+    today:'النهارده', yesterday:'امبارح', daysAgo:n=>`من ${n} أيام`,
+    up:'لفوق', down:'لتحت', back:'رجوع', min:n=>`${n} د`,
+    actOpen:'افتح الجلسة', actDelete:'امسح من السجل', longPressHint:'اضغط مطوّل على أي جلسة عشان تمسحها.',
+    muscles:'العضلات', steps:'الخطوات', tip:'نصيحة', fpBtn:'شوف الـ GIF على FitnessProgramer', ytBtn:'فيديو على يوتيوب', noGuide:'مفيش شرح مكتوب للتمرين ده لأنك ضفته بنفسك. استخدم الزراير اللي تحت.',
+    navBody:'الجسم', ty_w:'إ', ty_f:'ف', ty_d:'د', tyName_w:'إحماء', tyName_f:'للفشل', tyName_d:'دروب سيت', tyNormal:'مجموعة عادية', setTypeA:'نوع المجموعة',
+    setTypeHint:'اضغط على رقم المجموعة عشان تعلّمها إحماء (إ) أو للفشل (ف) أو دروب سيت (د). الإحماء ما بيدخلش في الأرقام القياسية.',
+    swStart:'ابدأ العد', swStop:'وقّف',
+    prW:n=>`🏆 رقم قياسي: أتقل وزن ليك في التمرين ده (${n} كجم)`, prE:n=>`🏆 رقم قياسي: أقوى مجموعة ليك (1RM متوقع ${n} كجم)`, prR:n=>`🏆 رقم قياسي: ${n} عدّة`, prT:n=>`🏆 رقم قياسي: ${n} ثانية`,
+    savedPR:n=>`الجلسة اتحفظت 💪 ومعاها ${n} رقم قياسي 🏆`,
+    tabSessions:'الجلسات', tabRecords:'الأرقام القياسية',
+    recordsEmpty:'خلّص جلسات وهتظهر هنا أحسن أرقامك في كل تمرين.', recHeaviest:'أتقل وزن', rec1rm:'1RM متوقع', recMostReps:'أكتر عدّات', recLongest:'أطول وقت', recTimes:n=>`اتسجّل ${n} مرة`,
+    logMeasure:'سجّل قياس', mz_weight:'الوزن', mz_waist:'الوسط', mz_fat:'الدهون', mz_chest:'الصدر', mz_arm:'الدراع', mz_thigh:'الفخذ', mz_hips:'الأرداف',
+    u_kg:'كجم', u_cm:'سم', u_pct:'%', moreMeasures:'+ قياسات أكتر', fewerMeasures:'− قياسات أقل', mDate:'التاريخ', saveMeasure:'حفظ القياس', measureSaved:'القياس اتحفظ',
+    measureEmpty:'سجّل وزنك ومقاس وسطك مرة في الأسبوع، في نفس اليوم والوقت، وهتشوف التغيير هنا.', enterOne:'اكتب قياس واحد على الأقل',
+    sinceFirst:'من أول قياس', sincePrev:'من اللي قبله', allEntries:'كل القياسات', delMeasureQ:'تمسح القياس ده؟', trendOf:n=>`${n} مع الوقت`, latest:'آخر قياس',
+  },
+  en: {
+    appName:'Rep Log', navHome:'Home', navRoutines:'Routines', navHistory:'History', navSettings:'Settings',
+    start:'Start workout', resume:'Resume session', activeNow:'Session in progress', readyTitle:'Ready to train?',
+    thisWeek:'This week', statSessions:'sessions', statSets:'sets', statVolume:'kg lifted',
+    exN:n=>`${n} exercise${n==1?'':'s'}`, setsN:n=>`${n} set${n==1?'':'s'}`, kg:'kg', reps:'reps', setH:'#',
+    recent:'Recent sessions', seeAll:'See all',
+    emptyHome:'No sessions yet. Tap “Start workout” and log your first set.',
+    chooseStart:'Start from', emptySession:'Empty session', emptySessionHint:'Pick exercises as you go',
+    freeSession:'Free workout', finish:'Finish', done:'Done',
+    sessionNote:'Session notes', notePh:'How did it go today?', exNotePh:'Note for this exercise',
+    addSet:'+ Set', removeSet:'− Last set', note:'Note', addExercise:'+ Add exercise',
+    last:'Last time', noLast:'First time logging this one', plan:'Plan',
+    rest:'Rest', skip:'Skip',
+    discard:'Discard session', discardQ:'Discard this session? Everything logged in it will be deleted.',
+    deleteSession:'Delete session', deleteSessionQ:'Delete this session from your history?',
+    emptyFinishQ:'No sets logged. Discard this session?',
+    removeExQ:n=>`Remove “${n}”?`, saved:'Session saved 💪', deleted:'Deleted',
+    cancel:'Cancel', del:'Delete', yes:'Yes', remove:'Remove',
+    search:'Search exercises', addCustom:n=>`+ Add “${n}”`, pickTitle:'Choose exercise', inSession:'added',
+    fMuscle:'Muscle', fEquip:'Equipment', all:'All', noMatch:'No exercises match these filters.',
+    g_chest:'Chest', g_back:'Back', g_shoulders:'Shoulders', g_legs:'Legs', g_arms:'Arms', g_core:'Abs & core', g_stretch:'Stretches', g_other:'Other',
+    e_barbell:'Barbell', e_dumbbell:'Dumbbell', e_cable:'Cable', e_machine:'Machine', e_bodyweight:'Bodyweight', e_kettlebell:'Kettlebell', e_band:'Band', e_other:'Other',
+    m_wr:'Weight × reps', m_r:'Reps only', m_t:'Time (seconds)', secs:'sec', secShort:'s',
+    video:'How to', restOf:n=>`Rest ${n}`, restOff:'No rest', restTitle:n=>`Rest after each set · ${n}`, restUseDefault:n=>`Default (${n})`, restHint:'This applies to this exercise only, in every session and routine.',
+    newRoutine:'+ New routine', editRoutine:'Edit routine', createRoutine:'New routine',
+    routinesEmpty:'Create a routine for each training day, like “Day 1” and “Day 2”, and start a session with its exercises ready.',
+    routineName:'Routine name', routineNamePh:'e.g. Day 1', exercises:'Exercises',
+    routineSetsHint:'Set the reps and weight you plan for each set. They show up as targets in the session.',
+    save:'Save', deleteRoutine:'Delete routine', deleteRoutineQ:n=>`Delete routine “${n}”? Past sessions stay as they are.`,
+    routineNeedsName:'Give the routine a name first', noExercisesYet:'No exercises in this routine yet',
+    routineSaved:'Routine saved', removeThisSet:'Remove set',
+    startR:'Start', edit:'Edit', startThis:'Save and start routine', activeExists:'Finish your session in progress first',
+    pendingQ:n=>`${n} sets have numbers but aren’t ticked ✓. Log them or drop them?`, logThem:'Log them', dropThem:'Drop them',
+    historyEmpty:'Finished sessions will show up here.',
+    language:'Language', restDefault:'Default rest (for exercises without their own)', sec:n=>`${n}s`,
+    myExercises:'Exercises you added', myExercisesEmpty:'Exercises you add from the exercise picker show up here.',
+    deleteExQ:n=>`Remove “${n}” from the list? It stays in past sessions.`,
+    backup:'Backup', backupHint:'Save a copy of all your sessions and routines to a file and restore it any time.',
+    export:'Export file', import:'Import file', pasteImport:'Or paste the backup file contents here', importBtn:'Import text',
+    importQ:n=>`${n} sessions will be added from the file, and routines and settings will be replaced. Continue?`,
+    imported:'Imported', badFile:'This file is not a Rep Log backup.',
+    exportFallback:'Copy this text and keep it somewhere safe:', copy:'Copy', copied:'Copied', exported:'File saved',
+    storeCloud:'Saved to your account', storeLocal:'Saved on this phone', storeLoading:'Loading…', storeSaving:'Saving…',
+    storeLocalHint:'Your data lives in this browser only. Export a backup now and then so you don’t lose it.',
+    storeCloudHint:'Your data is saved in your Claude account, visible only to you on any device.',
+    saveFail:"Couldn't save. Try again in a moment.",
+    today:'Today', yesterday:'Yesterday', daysAgo:n=>`${n} days ago`,
+    up:'Move up', down:'Move down', back:'Back', min:n=>`${n} min`,
+    actOpen:'Open session', actDelete:'Delete from history', longPressHint:'Long-press a session to delete it.',
+    muscles:'Muscles', steps:'Steps', tip:'Tip', fpBtn:'See the GIF on FitnessProgramer', ytBtn:'YouTube video', noGuide:'No written guide for exercises you added yourself. Use the links below.',
+    navBody:'Body', ty_w:'W', ty_f:'F', ty_d:'D', tyName_w:'Warm-up', tyName_f:'Failure', tyName_d:'Drop set', tyNormal:'Normal set', setTypeA:'Set type',
+    setTypeHint:'Tap a set number to mark it warm-up (W), failure (F) or drop set (D). Warm-ups don’t count toward records.',
+    swStart:'Start stopwatch', swStop:'Stop',
+    prW:n=>`🏆 New record: heaviest weight on this exercise (${n} kg)`, prE:n=>`🏆 New record: strongest set (est. 1RM ${n} kg)`, prR:n=>`🏆 New record: ${n} reps`, prT:n=>`🏆 New record: ${n} seconds`,
+    savedPR:n=>`Session saved 💪 with ${n} new record${n == 1 ? '' : 's'} 🏆`,
+    tabSessions:'Sessions', tabRecords:'Records',
+    recordsEmpty:'Finish some sessions and your best numbers per exercise show up here.', recHeaviest:'Heaviest', rec1rm:'Est. 1RM', recMostReps:'Most reps', recLongest:'Longest', recTimes:n=>`logged ${n} time${n == 1 ? '' : 's'}`,
+    logMeasure:'Log measurements', mz_weight:'Weight', mz_waist:'Waist', mz_fat:'Body fat', mz_chest:'Chest', mz_arm:'Arm', mz_thigh:'Thigh', mz_hips:'Hips',
+    u_kg:'kg', u_cm:'cm', u_pct:'%', moreMeasures:'+ More measurements', fewerMeasures:'− Fewer measurements', mDate:'Date', saveMeasure:'Save', measureSaved:'Measurements saved',
+    measureEmpty:'Log your weight and waist once a week, same day and time, and the trend shows up here.', enterOne:'Enter at least one measurement',
+    sinceFirst:'since first', sincePrev:'since previous', allEntries:'All entries', delMeasureQ:'Delete this entry?', trendOf:n=>`${n} over time`, latest:'Latest',
+  }
+};
+let LANG = 'ar';
+const t = (k, ...a) => { const v = I18N[LANG][k] ?? I18N.en[k] ?? k; return typeof v === 'function' ? v(...a) : v; };
+const LOCALE = () => LANG === 'ar' ? 'ar-EG-u-nu-latn' : 'en-GB';
+const SEP = () => LANG === 'ar' ? '، ' : ', ';
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const clone = o => JSON.parse(JSON.stringify(o));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const normNum = s => { s = String(s ?? '').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[٫,]/g, '.').replace(/[^\d.]/g, ''); if (!s) return null; const n = parseFloat(s); return isFinite(n) ? n : null; };
+const fmtW = n => n == null ? '' : (Math.round(n * 100) / 100).toString();
+const fmtInt = n => Math.round(n).toLocaleString('en-US');
+const ICON = {
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg>',
+  routines:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="9" width="3" height="6" rx="1"/><rect x="5" y="6.5" width="3" height="11" rx="1"/><rect x="16" y="6.5" width="3" height="11" rx="1"/><rect x="19" y="9" width="3" height="6" rx="1"/><path d="M8 12h8"/></svg>',
+  history:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>',
+  back:'<svg class="flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  chev:'<svg class="flip" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
+  caret:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M9 2h6"/></svg>',
+  trophy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4z"/><path d="M16 6h3v1a3 3 0 0 1-3 3M8 6H5v1a3 3 0 0 0 3 3M12 13v4M8 20h8"/></svg>',
+  stop:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>',
+  body:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="4"/><path d="M8.5 10a5 5 0 0 1 7 0L13 12.5"/></svg>',
+  play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>',
+};
+
+/* ---------- state ---------- */
+const defaultProfile = () => ({ lang:'ar', restSec:90, rest:{}, custom:[], routines:[] });
+const S = {
+  profile: defaultProfile(),
+  sessions: new Map(),
+  loaded: false,
+  view: 'home', prevView: 'home',
+  editId: null,
+  routineDraft: null,
+  storage: 'loading',
+  saving: false,
+  exportText: null,
+  anim: true,
+  newKey: null,
+  pick: { target:null, q:'', g:null, e:null, open:null },
+  measures: new Map(), mDraft: null, histTab: 'sessions',
+};
+const timer = { end:0, total:0, running:false };
+const emptySet = () => ({ w:null, r:null });
+
+function normalizeProfile(p) {
+  const d = defaultProfile();
+  if (!p || typeof p !== 'object') return d;
+  return {
+    lang: p.lang === 'en' ? 'en' : 'ar',
+    restSec: Number(p.restSec) > 0 ? Number(p.restSec) : d.restSec,
+    rest: p.rest && typeof p.rest === 'object' ? Object.fromEntries(Object.entries(p.rest).filter(([, v]) => Number(v) >= 0).map(([k, v]) => [k, Number(v)])) : {},
+    custom: Array.isArray(p.custom) ? p.custom.filter(x => x && x.id && x.name).map(x => ({ id:x.id, g:GROUPS.includes(x.g) ? x.g : 'other', e:EQUIP.includes(x.e) ? x.e : 'other', ...(MODES.includes(x.m) ? { m:x.m } : {}), name:String(x.name), ...(x.hidden ? { hidden:true } : {}) })) : [],
+    routines: Array.isArray(p.routines) ? p.routines.filter(r => r && r.id).map(r => ({
+      id:r.id, name:String(r.name || ''),
+      items:Array.isArray(r.items) ? r.items.filter(i => i && i.exId).map(i => ({
+        exId:i.exId,
+        sets:Array.isArray(i.sets) && i.sets.length ? i.sets.map(x => ({ w:x.w ?? null, r:x.r ?? null, ...keepT(x) })) : Array.from({ length:Math.max(1, i.targetSets || 3) }, emptySet),
+      })) : [],
+    })) : [],
+  };
+}
+function normalizeMeasure(m) {
+  if (!m || !m.id || !m.at) return null;
+  const o = { id:m.id, at:Number(m.at) };
+  for (const [k] of MKEYS) { const v = Number(m[k]); if (m[k] != null && isFinite(v) && v > 0) o[k] = v; }
+  return o;
+}
+function normalizeSession(s) {
+  if (!s || !s.id || !s.startedAt) return null;
+  return {
+    id: s.id, startedAt: Number(s.startedAt), endedAt: s.endedAt ? Number(s.endedAt) : null,
+    routineId: s.routineId || null, routineName: s.routineName || '', notes: s.notes || '',
+    items: Array.isArray(s.items) ? s.items.filter(i => i && i.exId).map(i => ({
+      exId:i.exId, note:i.note || '',
+      plan:Array.isArray(i.plan) ? i.plan.map(x => ({ w:x.w ?? null, r:x.r ?? null, ...keepT(x) })) : [],
+      sets:Array.isArray(i.sets) ? i.sets.map(x => ({ w:x.w ?? null, r:x.r ?? null, done:!!x.done, ...keepT(x), ...(['w','e','r','t'].includes(x.pr) ? { pr:x.pr } : {}) })) : [],
+    })) : [],
+  };
+}
+
+function exById(id) {
+  const p = PRESET_MAP.get(id); if (p) return p;
+  return S.profile.custom.find(c => c.id === id) || { id, g:'other', e:'other', name:'?' };
+}
+const exName = ex => ex.name ?? ex[LANG];
+const nameOf = id => exName(exById(id));
+const modeOf = id => { const ex = exById(id); return ex.m || (ex.e === 'bodyweight' ? 'r' : 'wr'); };
+const isBW = id => modeOf(id) !== 'wr';
+const restFor = id => { const v = S.profile.rest[id]; if (v != null) return v; return exById(id).g === 'stretch' ? 15 : S.profile.restSec; };
+const restLabel = sec => sec ? (sec >= 60 && sec % 60 === 0 ? `${sec / 60}:00` : sec >= 60 ? mmss(sec) : `${sec}${t('secShort')}`) : t('restOff');
+const fpURL = id => { const ex = exById(id); if (FP_SLUGS[id]) return `https://fitnessprogramer.com/exercise/${FP_SLUGS[id]}/`; return 'https://www.google.com/search?q=' + encodeURIComponent(`site:fitnessprogramer.com ${ex.en || ex.name}`); };
+function openHowTo(id) {
+  const ex = exById(id), G = GUIDE[id], L = LANG === 'ar' ? 0 : 1;
+  const body = `${exTags(ex)}
+    ${G ? `<div class="section"><div class="label">${esc(t('muscles'))}</div><div>${esc(G.m[L])}</div></div>
+    <div class="section"><div class="label">${esc(t('steps'))}</div><ol class="guide-steps">${(L ? G.e : G.a).map(x => `<li>${esc(x)}</li>`).join('')}</ol></div>
+    <div class="guide-tip"><b>${esc(t('tip'))}:</b> ${esc(L ? G.te : G.ta)}</div>` : `<div class="empty">${esc(t('noGuide'))}</div>`}
+    <div class="guide-links"><a class="btn primary block" href="${esc(fpURL(id))}" target="_blank" rel="noopener">${esc(t('fpBtn'))}</a>
+    <a class="btn block" href="${esc(ytURL(id))}" target="_blank" rel="noopener">${ICON.play.replace('<svg', '<svg width="16" height="16"')}${esc(t('ytBtn'))}</a></div>`;
+  openSheet(exName(ex), body);
+}
+const ytURL = id => { const ex = exById(id); const q = ex.en ? `${ex.en} ${ex.g === 'stretch' ? 'stretch' : 'exercise'} proper form` : `${ex.name} تمرين`; return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q); };
+const gColor = g => `var(--g-${GROUPS.includes(g) ? g : 'other'})`;
+const sortedSessions = () => [...S.sessions.values()].sort((a, b) => b.startedAt - a.startedAt);
+const activeSession = () => sortedSessions().find(s => !s.endedAt) || null;
+const finishedSessions = () => sortedSessions().filter(s => s.endedAt);
+function sessionStats(s) {
+  let sets = 0, vol = 0;
+  for (const it of s.items) { const bw = isBW(it.exId); for (const x of it.sets) if (x.r && x.t !== 'w') { sets++; if (!bw) vol += (x.w || 0) * x.r; } }
+  return { sets, vol };
+}
+function lastFor(exId, excludeId) {
+  for (const s of finishedSessions()) {
+    if (s.id === excludeId) continue;
+    const it = s.items.find(i => i.exId === exId);
+    if (it) { const sets = it.sets.filter(x => x.r); if (sets.length) return { at:s.startedAt, sets }; }
+  }
+  return null;
+}
+const e1rm = x => !x.w || !x.r ? 0 : x.r === 1 ? x.w : x.w * (1 + x.r / 30);
+const half = n => Math.round(n * 2) / 2;
+function bestBefore(s, exId, skipX) {
+  let any = false, maxW = 0, e1 = 0, maxR = 0;
+  const scan = sets => { for (const y of sets) { if (y === skipX || y.t === 'w' || !y.r) continue; any = true; if (y.w > 0) { maxW = Math.max(maxW, y.w); e1 = Math.max(e1, e1rm(y)); } maxR = Math.max(maxR, y.r); } };
+  for (const f of finishedSessions()) if (f.id !== s.id) for (const it of f.items) if (it.exId === exId) scan(it.sets);
+  for (const it of s.items) if (it.exId === exId) scan(it.sets.filter(y => y.done));
+  return { any, maxW, e1, maxR };
+}
+function checkPR(s, exId, x) {
+  if (x.t === 'w' || !x.r) return null;
+  const b = bestBefore(s, exId, x); if (!b.any) return null;
+  const md = modeOf(exId);
+  if (md === 'wr') {
+    if (x.w > 0 && x.w > b.maxW) return { k:'w', v:fmtW(x.w) };
+    if (x.w > 0 && e1rm(x) > b.e1 + 0.25) return { k:'e', v:fmtW(half(e1rm(x))) };
+    return null;
+  }
+  return x.r > b.maxR ? { k:md === 't' ? 't' : 'r', v:x.r } : null;
+}
+function computeRecords() {
+  const rec = new Map();
+  for (const s of finishedSessions()) for (const it of s.items) {
+    const md = modeOf(it.exId);
+    let r = rec.get(it.exId);
+    if (!r) { r = { exId:it.exId, md, maxW:0, maxWr:0, maxWAt:0, e1:0, e1At:0, maxR:0, maxRAt:0, n:0, lastAt:0 }; rec.set(it.exId, r); }
+    let counted = false;
+    for (const x of it.sets) {
+      if (x.t === 'w' || !x.r) continue; counted = true;
+      if (md === 'wr' && x.w > 0) {
+        if (x.w > r.maxW || (x.w === r.maxW && x.r > r.maxWr)) { r.maxW = x.w; r.maxWr = x.r; r.maxWAt = s.startedAt; }
+        const e = e1rm(x); if (e > r.e1) { r.e1 = e; r.e1At = s.startedAt; }
+      }
+      if (x.r > r.maxR) { r.maxR = x.r; r.maxRAt = s.startedAt; }
+    }
+    if (counted) { r.n++; r.lastAt = Math.max(r.lastAt, s.startedAt); }
+  }
+  return [...rec.values()].filter(r => r.n).sort((a, b) => b.lastAt - a.lastAt);
+}
+const fmtSet = (x, md) => md === 't' ? `${x.r ?? '–'}${t('secShort')}` : md === 'r' ? `${x.r ?? '–'}` : `${fmtW(x.w) || '0'}×${x.r ?? '–'}`;
+function relDay(ts) {
+  const d0 = new Date(); d0.setHours(0,0,0,0);
+  const d1 = new Date(ts); d1.setHours(0,0,0,0);
+  const days = Math.round((d0 - d1) / 864e5);
+  if (days <= 0) return t('today'); if (days === 1) return t('yesterday');
+  if (days < 7) return t('daysAgo', days);
+  return new Intl.DateTimeFormat(LOCALE(), { day:'numeric', month:'short' }).format(ts);
+}
+const fmtDate = (ts, o) => new Intl.DateTimeFormat(LOCALE(), o).format(ts);
+const mmss = sec => { sec = Math.max(0, Math.round(sec)); const m = Math.floor(sec / 60), s = sec % 60; return `${m}:${String(s).padStart(2,'0')}`; };
+const hmm = ms => { const m = Math.floor(ms / 60000); return m >= 60 ? `${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}` : t('min', m); };
+const exTags = ex => `<span class="tags"><span class="tag">${esc(t('g_' + (ex.g || 'other')))}</span><span class="tag">${esc(t('e_' + (ex.e || 'other')))}</span></span>`;
+
+/* ---------- storage ---------- */
+const LS_KEY = 'rep-log-v1';
+const Store = {
+  mode: 'memory', db: null, base: null,
+  writes: new Map(),
+  profileRef() { return this.db.doc(this.base + '/profile'); },
+  sessCol() { return this.profileRef().collection('sessions'); },
+  measCol() { return this.profileRef().collection('measures'); },
+};
+const deletedIds = new Set();
+function setSync() {
+  const el = $('#sync'); if (!el) return;
+  el.className = 'sync ' + (S.saving ? 'saving' : S.storage);
+  el.querySelector('span').textContent = S.saving ? t('storeSaving') : S.storage === 'cloud' ? t('storeCloud') : S.storage === 'local' ? t('storeLocal') : t('storeLoading');
+}
+function schedule(key, op, delay = 600) {
+  const p = Store.writes.get(key) || { op:null, t:0, busy:false };
+  p.op = op; clearTimeout(p.t);
+  p.t = setTimeout(() => flush(key), delay);
+  Store.writes.set(key, p);
+  S.saving = true; setSync();
+}
+async function flush(key) {
+  const p = Store.writes.get(key); if (!p || !p.op || p.busy) return;
+  const op = p.op; p.op = null; p.busy = true;
+  try { await op(); }
+  catch (e) {
+    if (e && e.code === 'unavailable') { await sleep(700 + Math.random() * 800); try { await op(); } catch { toast(t('saveFail')); } }
+    else toast(t('saveFail'));
+  }
+  p.busy = false;
+  if (p.op) { flush(key); return; }
+  Store.writes.delete(key);
+  if (!Store.writes.size) { S.saving = false; setSync(); }
+}
+function persistLocal() {
+  if (Store.mode === 'memory') return;
+  schedule('local', async () => {
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ profile:S.profile, sessions:[...S.sessions.values()].map(stripUI), measures:[...S.measures.values()] })); } catch {}
+  }, 300);
+}
+const stripUI = s => { const v = clone(s); v.items.forEach(it => delete it._noteOpen); return v; };
+function saveProfile() {
+  if (Store.mode === 'cloud') { const v = clone(S.profile); schedule('profile', () => Store.profileRef().set(v)); }
+  else persistLocal();
+}
+function saveSession(s, delay) {
+  if (Store.mode === 'cloud') { const v = stripUI(s); schedule('s:' + s.id, () => Store.sessCol().doc(s.id).set(v), delay); }
+  else persistLocal();
+}
+function removeSession(id) {
+  S.sessions.delete(id); deletedIds.add(id);
+  if (Store.mode === 'cloud') {
+    const p = Store.writes.get('s:' + id); if (p) { clearTimeout(p.t); p.op = null; }
+    schedule('s:' + id, () => Store.sessCol().doc(id).delete(), 0);
+  } else persistLocal();
+}
+const deletedM = new Set();
+function saveMeasure(m) {
+  S.measures.set(m.id, m);
+  if (Store.mode === 'cloud') { const v = clone(m); schedule('m:' + m.id, () => Store.measCol().doc(m.id).set(v), 0); }
+  else persistLocal();
+}
+function removeMeasure(id) {
+  S.measures.delete(id); deletedM.add(id);
+  if (Store.mode === 'cloud') schedule('m:' + id, () => Store.measCol().doc(id).delete(), 0);
+  else persistLocal();
+}
+function useLocal() {
+  Store.mode = 'local'; S.storage = 'local';
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) { const d = JSON.parse(raw); S.profile = normalizeProfile(d.profile); for (const s of d.sessions || []) { const n = normalizeSession(s); if (n) S.sessions.set(n.id, n); } for (const m of d.measures || []) { const n = normalizeMeasure(m); if (n) S.measures.set(n.id, n); } }
+  } catch { Store.mode = 'memory'; }
+  LANG = S.profile.lang; S.loaded = true; applyLang(); render();
+}
+async function initStore() {
+  if (!window.claude || typeof window.claude.use !== 'function') return useLocal();
+  let db = null, user = null;
+  try { [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]); } catch {}
+  let uid = null;
+  try { uid = user ? await user.id() : null; } catch {}
+  if (!db || !uid) return useLocal();
+  Store.db = db; Store.base = 'data/users/' + uid; Store.mode = 'cloud';
+  let gotProfile = false, gotSessions = false, gotMeasures = false;
+  const ready = () => { if (gotProfile && gotSessions && gotMeasures && !S.loaded) { S.loaded = true; S.storage = 'cloud'; LANG = S.profile.lang; applyLang(); S.anim = true; render(); } };
+  const fail = () => { if (!S.loaded) useLocal(); };
+  try {
+    Store.profileRef().onSnapshot(snap => {
+      if (Store.writes.has('profile')) { gotProfile = true; ready(); return; }
+      if (snap.exists) S.profile = normalizeProfile(snap.data());
+      const langChanged = LANG !== S.profile.lang;
+      LANG = S.profile.lang;
+      gotProfile = true;
+      if (S.loaded) { if (langChanged) applyLang(); softRender(); } else ready();
+    }, fail);
+    Store.sessCol().orderBy('startedAt', 'desc').limit(1000).onSnapshot(snap => {
+      const next = new Map();
+      for (const d of snap.docs) {
+        if (deletedIds.has(d.id)) continue;
+        if ((d.id === S.editId || Store.writes.has('s:' + d.id)) && S.sessions.has(d.id)) { next.set(d.id, S.sessions.get(d.id)); continue; }
+        const n = normalizeSession({ ...d.data(), id:d.id }); if (n) next.set(n.id, n);
+      }
+      for (const [id, s] of S.sessions) if (!next.has(id) && !deletedIds.has(id) && (id === S.editId || Store.writes.has('s:' + id))) next.set(id, s);
+      S.sessions = next;
+      gotSessions = true;
+      if (S.loaded) softRender(); else ready();
+    }, fail);
+    Store.measCol().orderBy('at', 'desc').limit(1000).onSnapshot(snap => {
+      const next = new Map();
+      for (const d of snap.docs) { if (deletedM.has(d.id)) continue; const n = normalizeMeasure({ ...d.data(), id:d.id }); if (n) next.set(n.id, n); }
+      for (const [id, m] of S.measures) if (!next.has(id) && !deletedM.has(id) && Store.writes.has('m:' + id)) next.set(id, m);
+      S.measures = next;
+      gotMeasures = true;
+      if (S.loaded) softRender(); else ready();
+    }, () => { gotMeasures = true; ready(); });
+  } catch { fail(); }
+}
+
+/* ---------- ui primitives ---------- */
+let toastT = 0;
+function toast(msg) { const el = $('#toast'); el.hidden = true; void el.offsetWidth; el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 2200); }
+function choose(msg, okLabel, noLabel, danger) {
+  return new Promise(res => {
+    const layer = document.createElement('div');
+    layer.className = 'scrim center';
+    layer.innerHTML = `<div class="modal" role="alertdialog" aria-modal="true"><p></p><div class="acts"><button class="btn" data-a="no">${esc(noLabel)}</button><button class="btn ${danger ? 'danger' : 'primary'}" data-a="ok">${esc(okLabel)}</button></div></div>`;
+    layer.querySelector('p').textContent = msg;
+    const done = v => { layer.remove(); res(v); };
+    layer.addEventListener('click', e => { e.stopPropagation(); const a = e.target.closest('[data-a]'); if (a) done(a.dataset.a); else if (e.target === layer) done(null); });
+    document.body.appendChild(layer);
+    layer.querySelector('[data-a="ok"]').focus();
+  });
+}
+const ask = async (msg, okLabel, danger = true) => (await choose(msg, okLabel || t('yes'), t('cancel'), danger)) === 'ok';
+let sheetEl = null;
+function openSheet(title, bodyHTML, onMount) {
+  closeSheet();
+  sheetEl = document.createElement('div');
+  sheetEl.className = 'scrim';
+  sheetEl.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="sheet-head"><h2></h2><button class="iconbtn" data-act="closeSheet" aria-label="${esc(t('cancel'))}">${ICON.x}</button></div><div class="sheet-body">${bodyHTML}</div></div>`;
+  sheetEl.querySelector('h2').textContent = title;
+  sheetEl.addEventListener('click', e => { if (e.target === sheetEl) closeSheet(); });
+  $('#layer').appendChild(sheetEl);
+  onMount && onMount(sheetEl);
+}
+function closeSheet() { if (sheetEl) { sheetEl.remove(); sheetEl = null; } }
+function applyLang() { document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr'; }
+
+/* ---------- views ---------- */
+function syncBadge() { return `<span id="sync" class="sync ${S.saving ? 'saving' : S.storage}"><i></i><span></span></span>`; }
+
+function viewHome() {
+  const act = activeSession();
+  const weekStart = (() => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - (d.getDay() + 1) % 7); return d.getTime(); })(); // week starts Saturday
+  const wk = finishedSessions().filter(s => s.startedAt >= weekStart);
+  let wSets = 0, wVol = 0; for (const s of wk) { const st = sessionStats(s); wSets += st.sets; wVol += st.vol; }
+  const recent = finishedSessions().slice(0, 5);
+  const hero = act
+    ? `<div class="hero"><span class="deco"></span><span class="live"><i></i>${esc(t('activeNow'))}</span><div class="h-title">${esc(act.routineName || t('freeSession'))}</div><div class="h-sub">${esc(t('exN', act.items.length))} · ${esc(t('setsN', sessionStats(act).sets))}</div><button class="btn" data-act="openSession" data-id="${esc(act.id)}">${esc(t('resume'))}</button></div>`
+    : `<div class="hero"><span class="deco"></span><div class="h-date">${esc(fmtDate(Date.now(), { weekday:'long', day:'numeric', month:'long' }))}</div><div class="h-title">${esc(t('readyTitle'))}</div><button class="btn" data-act="startMenu" ${S.loaded ? '' : 'disabled'}>${esc(t('start'))}</button></div>`;
+  return `<div class="view">
+    <header class="topbar"><h1>${esc(t('appName'))}</h1>${syncBadge()}</header>
+    ${hero}
+    <section class="section"><div class="label">${esc(t('thisWeek'))}</div>
+      <div class="stats">
+        <div class="stat"><b>${wk.length}</b><span>${esc(t('statSessions'))}</span></div>
+        <div class="stat"><b>${wSets}</b><span>${esc(t('statSets'))}</span></div>
+        <div class="stat"><b>${fmtInt(wVol)}</b><span>${esc(t('statVolume'))}</span></div>
+      </div></section>
+    <section class="section"><div class="section-head"><div class="label">${esc(t('recent'))}</div>${recent.length ? `<button class="link" data-act="nav" data-v="history">${esc(t('seeAll'))}</button>` : ''}</div>
+      ${recent.length ? `<div class="list">${recent.map(sessionRow).join('')}</div>` : `<div class="empty">${S.loaded ? esc(t('emptyHome')) : esc(t('storeLoading'))}</div>`}
+    </section>
+  </div>`;
+}
+function sessionRow(s) {
+  const st = sessionStats(s);
+  const names = s.items.map(i => nameOf(i.exId)).join(SEP());
+  return `<button class="row" data-act="openSession" data-id="${esc(s.id)}">
+    <div class="date"><b>${new Date(s.startedAt).getDate()}</b><small>${esc(fmtDate(s.startedAt, { weekday:'short' }))}</small></div>
+    <div class="main"><div class="r-title">${esc(s.routineName || t('freeSession'))}</div><div class="r-sub">${esc(t('setsN', st.sets))} · ${fmtInt(st.vol)} ${esc(t('kg'))}${names ? ' · ' + esc(names) : ''}</div></div>
+    <span class="chev">${ICON.chev}</span></button>`;
+}
+function viewHistory() {
+  let html = '', month = '', group = [];
+  const flushGroup = () => { if (group.length) html += `<section class="section"><div class="label">${esc(month)}</div><div class="list">${group.join('')}</div></section>`; group = []; };
+  for (const s of finishedSessions()) {
+    const m = fmtDate(s.startedAt, { month:'long', year:'numeric' });
+    if (m !== month) { flushGroup(); month = m; }
+    group.push(sessionRow(s));
+  }
+  flushGroup();
+  const tabs = `<div class="seg"><button data-act="histTab" data-v="sessions" aria-pressed="${S.histTab === 'sessions'}">${esc(t('tabSessions'))}</button><button data-act="histTab" data-v="records" aria-pressed="${S.histTab === 'records'}">${esc(t('tabRecords'))}</button></div>`;
+  const body = S.histTab === 'records' ? viewRecords() : (html ? `<p class="hint">${esc(t('longPressHint'))}</p>${html}` : `<div class="empty">${esc(S.loaded ? t('historyEmpty') : t('storeLoading'))}</div>`);
+  return `<div class="view"><header class="topbar"><h1>${esc(t('navHistory'))}</h1>${syncBadge()}</header>${tabs}${body}</div>`;
+}
+function viewRecords() {
+  const recs = computeRecords();
+  if (!recs.length) return `<div class="empty">${esc(t('recordsEmpty'))}</div>`;
+  const val = (label, v, at) => `<span>${esc(label)}<b>${esc(v)}</b> · ${esc(relDay(at))}</span>`;
+  return `<div class="list">${recs.map(r => {
+    const vals = [];
+    if (r.md === 'wr' && r.maxW) { vals.push(val(t('recHeaviest'), `${fmtW(r.maxW)}×${r.maxWr}`, r.maxWAt)); vals.push(val(t('rec1rm'), `${fmtW(half(r.e1))} ${t('kg')}`, r.e1At)); }
+    else if (r.md === 't') vals.push(val(t('recLongest'), `${r.maxR}${t('secShort')}`, r.maxRAt));
+    else vals.push(val(t('recMostReps'), String(r.maxR), r.maxRAt));
+    return `<div class="rec"><div class="nm">${esc(nameOf(r.exId))} <small class="muted">· ${esc(t('recTimes', r.n))}</small></div><div class="vals">${vals.join('')}</div></div>`;
+  }).join('')}</div>`;
+}
+
+function exHead(exId, i, count, prefix) {
+  const ex = exById(exId);
+  return `<div class="ex-head"><div class="ttl"><h3>${esc(exName(ex))}</h3>${exTags(ex)}
+      <div class="ex-meta"><button class="mini acc" data-act="restPick" data-ex="${esc(exId)}">${ICON.clock}${esc(t('restOf', restLabel(restFor(exId))))}</button>
+      <button class="mini" data-act="howto" data-ex="${esc(exId)}">${ICON.play}${esc(t('video'))}</button></div></div>
+    <div class="tools">
+      <button class="iconbtn" data-act="${prefix}Up" data-i="${i}" aria-label="${esc(t('up'))}" ${i === 0 ? 'disabled' : ''}>${ICON.up}</button>
+      <button class="iconbtn" data-act="${prefix}Down" data-i="${i}" aria-label="${esc(t('down'))}" ${i === count - 1 ? 'disabled' : ''}>${ICON.down}</button>
+      <button class="iconbtn" data-act="${prefix}Remove" data-i="${i}" aria-label="${esc(t('remove'))}">${ICON.x}</button>
+    </div></div>`;
+}
+const setNo = (sets, j) => sets[j].t ? t('ty_' + sets[j].t) : String(sets.slice(0, j + 1).filter(y => y.t !== 'w').length);
+function setHeader(md) {
+  return `<div class="set head ${md !== 'wr' ? 'bw' : ''}"><span>${esc(t('setH'))}</span>${md !== 'wr' ? '' : `<span>${esc(t('kg'))}</span>`}<span>${esc(md === 't' ? t('secs') : t('reps'))}</span><span></span></div>`;
+}
+
+function viewSession() {
+  const s = S.sessions.get(S.editId);
+  if (!s) { S.view = 'home'; return viewHome(); }
+  const live = !s.endedAt;
+  return `<div class="view ${S.anim ? 'anim' : ''}">
+    <header class="topbar">
+      <button class="iconbtn" data-act="leaveSession" aria-label="${esc(t('back'))}">${ICON.back}</button>
+      <div class="t-main"><div class="t-title">${esc(s.routineName || t('freeSession'))}</div>
+        <div class="t-sub">${esc(fmtDate(s.startedAt, { weekday:'short', day:'numeric', month:'short' }))} · <span id="elapsed">${esc(hmm((live ? Date.now() : s.endedAt) - s.startedAt))}</span></div></div>
+      ${live ? `<button class="btn primary sm" data-act="finish">${esc(t('finish'))}</button>` : `<button class="btn sm" data-act="leaveSession">${esc(t('done'))}</button>`}
+    </header>
+    <textarea class="note-area" id="sessNote" data-f="snote" rows="1" placeholder="${esc(t('notePh'))}" aria-label="${esc(t('sessionNote'))}">${esc(s.notes)}</textarea>
+    ${s.items.length && !s.items.some(it => it.sets.some(x => x.t)) ? `<p class="hint">${esc(t('setTypeHint'))}</p>` : ''}
+    ${s.items.map((it, i) => exCard(s, it, i)).join('')}
+    <button class="add-ex" data-act="pickForSession">${esc(t('addExercise'))}</button>
+    <button class="danger-link" data-act="${live ? 'discard' : 'deleteSession'}">${esc(live ? t('discard') : t('deleteSession'))}</button>
+  </div>`;
+}
+function exCard(s, it, i) {
+  const ex = exById(it.exId), md = modeOf(it.exId), bw = md !== 'wr';
+  const last = lastFor(it.exId, s.id);
+  const info = [];
+  if (it.plan.length) info.push(`<span>${esc(t('plan'))}:</span> ${it.plan.map(x => `<span class="num">${fmtSet(x, md)}</span>`).join(' ')}`);
+  info.push(last ? `<span>${esc(t('last'))} · ${esc(relDay(last.at))}:</span> ${last.sets.filter(x => x.t !== 'w').map(x => `<span class="num">${fmtSet(x, md)}</span>`).join(' ')}` : `<span>${esc(t('noLast'))}</span>`);
+  const rows = it.sets.map((x, j) => {
+    const ph = it.plan[j] && (it.plan[j].r != null || it.plan[j].w != null) ? it.plan[j] : last ? (last.sets[j] || last.sets[last.sets.length - 1]) : null;
+    const running = sw.on && sw.sid === s.id && sw.i === i && sw.j === j;
+    const timed = md === 't' && !s.endedAt;
+    return `<div class="set ${bw ? 'bw' : ''} ${timed ? 'timed' : ''} ${x.done ? 'done' : ''} ${x.pr ? 'pr' : ''} ${S.newKey === `${i}-${j}` ? 'new' : ''}">
+      <button class="no ${x.t ? 'ty-' + x.t : ''}" data-act="setType" data-i="${i}" data-j="${j}" aria-label="${esc(t('setTypeA'))}">${esc(setNo(it.sets, j))}</button>
+      ${bw ? '' : `<input id="w-${i}-${j}" type="text" inputmode="decimal" autocomplete="off" data-f="w" data-i="${i}" data-j="${j}" value="${esc(fmtW(x.w))}" placeholder="${ph ? esc(fmtW(ph.w)) : ''}" aria-label="${esc(t('kg'))} ${j + 1}">`}
+      <input id="r-${i}-${j}" type="text" inputmode="numeric" autocomplete="off" data-f="r" data-i="${i}" data-j="${j}" value="${x.r ?? ''}" placeholder="${ph && ph.r != null ? ph.r : ''}" aria-label="${esc(md === 't' ? t('secs') : t('reps'))} ${j + 1}">
+      ${timed ? `<button class="sw ${running ? 'on' : ''}" data-act="sw" data-i="${i}" data-j="${j}" aria-label="${esc(t(running ? 'swStop' : 'swStart'))}">${running ? ICON.stop : ICON.play}</button>` : ''}
+      <button class="check" data-act="toggleSet" data-i="${i}" data-j="${j}" aria-pressed="${x.done}" aria-label="✓ ${j + 1}">${x.pr ? ICON.trophy : ICON.check}</button>
+    </div>`;
+  }).join('');
+  const noteOpen = it.note || it._noteOpen;
+  return `<article class="ex">
+    ${exHead(it.exId, i, s.items.length, 'ex')}
+    <div class="last">${info.join('<br>')}</div>
+    <div class="sets">${setHeader(md)}${rows}</div>
+    <div class="ex-actions">
+      <button class="btn sm" data-act="addSet" data-i="${i}">${esc(t('addSet'))}</button>
+      ${it.sets.length ? `<button class="btn sm" data-act="removeSet" data-i="${i}">${esc(t('removeSet'))}</button>` : ''}
+      ${noteOpen ? '' : `<button class="btn sm" data-act="noteOpen" data-i="${i}">${esc(t('note'))}</button>`}
+    </div>
+    ${noteOpen ? `<textarea class="ex-note" id="exnote-${i}" data-f="exnote" data-i="${i}" rows="1" placeholder="${esc(t('exNotePh'))}">${esc(it.note)}</textarea>` : ''}
+  </article>`;
+}
+
+function viewRoutines() {
+  const rs = S.profile.routines;
+  return `<div class="view ${S.anim ? 'anim' : ''}"><header class="topbar"><h1>${esc(t('navRoutines'))}</h1>${syncBadge()}</header>
+    ${rs.length ? rs.map(r => `<div class="r-card"><button class="r-open" data-act="editRoutine" data-id="${esc(r.id)}"><span class="r-name">${esc(r.name)}</span>
+      <span class="tags">${[...new Set(r.items.map(i => exById(i.exId).g))].map(g => `<span class="tag">${esc(t('g_' + g))}</span>`).join('')}</span>
+      <span class="r-ex">${esc(t('exN', r.items.length))} · ${esc(t('setsN', r.items.reduce((a, i) => a + i.sets.length, 0)))}${r.items.length ? ' · ' + esc(r.items.map(i => nameOf(i.exId)).join(SEP())) : ''}</span></button>
+      <div class="r-acts"><button class="btn primary sm" data-act="startRoutine" data-id="${esc(r.id)}" ${r.items.length ? '' : 'disabled'}>${esc(t('startR'))}</button><button class="btn sm" data-act="editRoutine" data-id="${esc(r.id)}">${esc(t('edit'))}</button></div></div>`).join('') : `<div class="empty">${esc(t('routinesEmpty'))}</div>`}
+    <button class="btn primary block" data-act="newRoutine" ${S.loaded ? '' : 'disabled'}>${esc(t('newRoutine'))}</button>
+  </div>`;
+}
+function viewRoutineEdit() {
+  const d = S.routineDraft;
+  const exists = S.profile.routines.some(r => r.id === d.id);
+  const cards = d.items.map((it, i) => {
+    const ex = exById(it.exId), md = modeOf(it.exId), bw = md !== 'wr';
+    const rows = it.sets.map((x, j) => `<div class="set ${bw ? 'bw' : ''} ${S.newKey === `r${i}-${j}` ? 'new' : ''}">
+      <button class="no ${x.t ? 'ty-' + x.t : ''}" data-act="rSetType" data-i="${i}" data-j="${j}" aria-label="${esc(t('setTypeA'))}">${esc(setNo(it.sets, j))}</button>
+      ${bw ? '' : `<input id="rw-${i}-${j}" type="text" inputmode="decimal" autocomplete="off" data-f="rw" data-i="${i}" data-j="${j}" value="${esc(fmtW(x.w))}" placeholder="–" aria-label="${esc(t('kg'))} ${j + 1}">`}
+      <input id="rr-${i}-${j}" type="text" inputmode="numeric" autocomplete="off" data-f="rr" data-i="${i}" data-j="${j}" value="${x.r ?? ''}" placeholder="–" aria-label="${esc(md === 't' ? t('secs') : t('reps'))} ${j + 1}">
+      <button class="xbtn" data-act="rDelSet" data-i="${i}" data-j="${j}" aria-label="${esc(t('removeThisSet'))}" ${it.sets.length <= 1 ? 'disabled' : ''}>${ICON.x}</button>
+    </div>`).join('');
+    return `<article class="ex ${S.newKey === 'rex' + i ? 'new' : ''}">
+      ${exHead(it.exId, i, d.items.length, 'r')}
+      <div class="sets">${setHeader(md)}${rows}</div>
+      <div class="ex-actions"><button class="btn sm" data-act="rAddSet" data-i="${i}">${esc(t('addSet'))}</button></div>
+    </article>`;
+  }).join('');
+  return `<div class="view ${S.anim ? 'anim' : ''}">
+    <header class="topbar"><button class="iconbtn" data-act="nav" data-v="routines" aria-label="${esc(t('back'))}">${ICON.back}</button>
+      <div class="t-main"><div class="t-title">${esc(exists ? t('editRoutine') : t('createRoutine'))}</div></div>
+      <button class="btn primary sm" data-act="saveRoutine">${esc(t('save'))}</button></header>
+    <label class="field"><span class="label">${esc(t('routineName'))}</span><input class="input" id="rname" data-f="rname" value="${esc(d.name)}" placeholder="${esc(t('routineNamePh'))}" autocomplete="off"></label>
+    <section class="section"><div class="label">${esc(t('exercises'))}</div>
+      ${d.items.length ? `<span class="muted" style="font-size:13px">${esc(t('routineSetsHint'))} ${esc(t('setTypeHint'))}</span>` : `<div class="empty">${esc(t('noExercisesYet'))}</div>`}
+    </section>
+    ${cards}
+    <button class="add-ex" data-act="pickForRoutine">${esc(t('addExercise'))}</button>
+    ${d.items.length ? `<button class="btn primary block" data-act="saveStart">${esc(t('startThis'))}</button>` : ''}
+    ${exists ? `<button class="danger-link" data-act="deleteRoutine">${esc(t('deleteRoutine'))}</button>` : ''}
+  </div>`;
+}
+
+const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+function lineChart(pts, unit) {
+  const W = 320, H = 140, pl = 34, pr = 12, pt = 12, pb = 24;
+  const xs = pts.map(p => p.at), ys = pts.map(p => p.v);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs) === x0 ? x0 + 1 : Math.max(...xs);
+  const dMin = Math.min(...ys), dMax = Math.max(...ys);
+  const pad = (dMax - dMin) * 0.2 || 1, y0 = dMin - pad, y1 = dMax + pad;
+  const X = a => pl + (a - x0) / (x1 - x0) * (W - pl - pr), Y = v => pt + (1 - (v - y0) / (y1 - y0)) * (H - pt - pb);
+  const line = pts.map((p, k) => `${k ? 'L' : 'M'}${X(p.at).toFixed(1)},${Y(p.v).toFixed(1)}`).join('');
+  const area = `${line}L${X(pts[pts.length - 1].at).toFixed(1)},${H - pb}L${X(pts[0].at).toFixed(1)},${H - pb}Z`;
+  const ticks = dMin === dMax ? [dMin] : [dMin, dMax];
+  const last = pts[pts.length - 1];
+  const df = a => fmtDate(a, { day:'numeric', month:'short' });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(unit)}" dir="ltr">
+    ${ticks.map(v => `<line x1="${pl}" x2="${W - pr}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="var(--line)" stroke-dasharray="3 4"/><text x="${pl - 6}" y="${(Y(v) + 3).toFixed(1)}" text-anchor="end">${fmtW(v)}</text>`).join('')}
+    <path d="${area}" fill="var(--accent-soft)" opacity=".7"/>
+    <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${pts.map(p => `<circle cx="${X(p.at).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="${p === last ? 4.5 : 2.5}" fill="${p === last ? 'var(--accent)' : 'var(--surface)'}" stroke="var(--accent)" stroke-width="2"/>`).join('')}
+    <text x="${pl}" y="${H - 6}" text-anchor="start">${esc(df(pts[0].at))}</text>
+    <text x="${W - pr}" y="${H - 6}" text-anchor="end">${esc(df(last.at))}</text>
+  </svg>`;
+}
+function delta(a, b, unit) {
+  const d = Math.round((a - b) * 10) / 10;
+  if (!d) return '±0';
+  return `${d > 0 ? '↑' : '↓'} ${fmtW(Math.abs(d))} ${t('u_' + unit)}`;
+}
+function viewBody() {
+  const list = [...S.measures.values()].sort((a, b) => b.at - a.at);
+  const D = S.mDraft || (S.mDraft = { date:todayISO(), more:false });
+  const latestOf = k => list.find(m => m[k] != null);
+  const field = k => { const lt = latestOf(k); return `<label class="mfield"><span class="label">${esc(t('mz_' + k))}</span><span class="minput"><input id="mz-${k}" type="text" inputmode="decimal" autocomplete="off" data-f="mz" data-k="${k}" value="${esc(D[k] ?? '')}" placeholder="${lt ? esc(fmtW(lt[k])) : ''}"><em>${esc(t('u_' + MUNIT[k]))}</em></span></label>`; };
+  const main = ['weight','waist','fat'], extra = ['chest','arm','thigh','hips'];
+  const tiles = ['weight','waist'].map(k => {
+    const ser = list.filter(m => m[k] != null);
+    if (!ser.length) return '';
+    const [now, prev] = ser, first = ser[ser.length - 1];
+    return `<div class="tile"><span class="label">${esc(t('mz_' + k))}</span><b>${fmtW(now[k])} <small>${esc(t('u_' + MUNIT[k]))}</small></b>
+      ${prev ? `<span class="d">${esc(delta(now[k], prev[k], MUNIT[k]))} ${esc(t('sincePrev'))}</span>` : ''}
+      ${ser.length > 2 ? `<span class="d">${esc(delta(now[k], first[k], MUNIT[k]))} ${esc(t('sinceFirst'))}</span>` : ''}</div>`;
+  }).join('');
+  const charts = MKEYS.map(([k, u]) => {
+    const pts = list.filter(m => m[k] != null).map(m => ({ at:m.at, v:m[k] })).reverse();
+    return pts.length >= 2 ? `<div class="chart"><span class="label">${esc(t('trendOf', t('mz_' + k)))} (${esc(t('u_' + u))})</span>${lineChart(pts, t('mz_' + k))}</div>` : '';
+  }).join('');
+  return `<div class="view"><header class="topbar"><h1>${esc(t('navBody'))}</h1>${syncBadge()}</header>
+    <section class="card"><div class="label">${esc(t('logMeasure'))}</div>
+      <label class="mfield"><span class="label">${esc(t('mDate'))}</span><input class="date-in" type="date" id="mzDate" data-f="mzdate" value="${esc(D.date)}" max="${todayISO()}"></label>
+      <div class="mgrid">${main.map(field).join('')}${D.more ? extra.map(field).join('') : ''}</div>
+      <div class="ex-actions"><button class="btn sm" data-act="mzMore">${esc(D.more ? t('fewerMeasures') : t('moreMeasures'))}</button><button class="btn primary sm" data-act="saveMeasure">${esc(t('saveMeasure'))}</button></div>
+    </section>
+    ${tiles ? `<div class="tiles">${tiles}</div>` : ''}
+    ${charts}
+    ${list.length ? `<section class="section"><div class="label">${esc(t('allEntries'))}</div><div class="list">${list.map(m => `<div class="mrow"><div class="main"><b>${esc(fmtDate(m.at, { weekday:'short', day:'numeric', month:'short', year:'numeric' }))}</b><br><span class="muted">${MKEYS.filter(([k]) => m[k] != null).map(([k, u]) => `${esc(t('mz_' + k))} ${fmtW(m[k])}${esc(t('u_' + u))}`).join(' · ')}</span></div><button class="iconbtn" data-act="delMeasure" data-id="${esc(m.id)}" aria-label="${esc(t('del'))}">${ICON.x}</button></div>`).join('')}</div></section>` : `<div class="empty">${esc(S.loaded ? t('measureEmpty') : t('storeLoading'))}</div>`}
+  </div>`;
+}
+function viewSettings() {
+  const rest = [60, 90, 120, 180];
+  const customs = S.profile.custom.filter(c => !c.hidden);
+  return `<div class="view ${S.anim ? 'anim' : ''}"><header class="topbar"><h1>${esc(t('navSettings'))}</h1>${syncBadge()}</header>
+    <section class="section"><div class="label">${esc(t('language'))}</div>
+      <div class="seg"><button data-act="setLang" data-v="ar" aria-pressed="${LANG === 'ar'}">عربي</button><button data-act="setLang" data-v="en" aria-pressed="${LANG === 'en'}">English</button></div></section>
+    <section class="section"><div class="label">${esc(t('restDefault'))}</div>
+      <div class="seg">${rest.map(n => `<button data-act="setRest" data-v="${n}" aria-pressed="${S.profile.restSec === n}">${esc(t('sec', n))}</button>`).join('')}</div></section>
+    <section class="section"><div class="label">${esc(t('myExercises'))}</div>
+      ${customs.length ? `<div class="list">${customs.map(c => `<div class="ritem"><span class="nm">${esc(c.name)}<br>${exTags(c)}</span><button class="iconbtn" data-act="delCustom" data-id="${esc(c.id)}" aria-label="${esc(t('remove'))}">${ICON.x}</button></div>`).join('')}</div>` : `<div class="empty">${esc(t('myExercisesEmpty'))}</div>`}</section>
+    <section class="section"><div class="label">${esc(t('backup'))}</div>
+      <div class="card">
+        <span class="muted">${esc(S.storage === 'cloud' ? t('storeCloudHint') : t('storeLocalHint'))}</span>
+        <span class="muted">${esc(t('backupHint'))}</span>
+        <div class="ex-actions"><button class="btn primary" data-act="export">${esc(t('export'))}</button>
+          <label class="btn filelbl">${esc(t('import'))}<input type="file" id="importFile" accept=".json,application/json,text/plain"></label></div>
+        ${S.exportText ? `<span>${esc(t('exportFallback'))}</span><textarea class="mono-box" id="exportBox" readonly>${esc(S.exportText)}</textarea><button class="btn" data-act="copyExport">${esc(t('copy'))}</button>` : ''}
+        <textarea class="mono-box" id="importBox" placeholder="${esc(t('pasteImport'))}"></textarea>
+        <button class="btn" data-act="importText">${esc(t('importBtn'))}</button>
+      </div></section>
+  </div>`;
+}
+
+function navBar() {
+  const items = [['home','navHome'],['routines','navRoutines'],['history','navHistory'],['body','navBody'],['settings','navSettings']];
+  const cur = S.view === 'routineEdit' ? 'routines' : S.view;
+  return `<nav class="nav"><div class="nav-in">${items.map(([v, k]) => `<button data-act="nav" data-v="${v}" ${cur === v ? 'aria-current="page"' : ''}><span class="ico">${ICON[v]}</span><span>${esc(t(k))}</span></button>`).join('')}</div></nav>`;
+}
+function timerBar() {
+  if (!timer.running) return '';
+  return `<div class="timer" id="timer"><div class="timer-in">
+    <div class="grow"><div class="t-lbl">${esc(t('rest'))}</div><div class="bar"><i id="tbar"></i></div></div>
+    <span class="t-time" id="ttime">${mmss((timer.end - Date.now()) / 1000)}</span>
+    <button data-act="tAdj" data-d="-15">−15</button><button data-act="tAdj" data-d="15">+15</button>
+    <button data-act="tStop" aria-label="${esc(t('skip'))}">${ICON.x.replace('<svg', '<svg width="18" height="18"')}</button>
+  </div></div>`;
+}
+
+function render() {
+  const v = S.view;
+  const html = v === 'session' ? viewSession() : v === 'routines' ? viewRoutines() : v === 'routineEdit' ? viewRoutineEdit() : v === 'history' ? viewHistory() : v === 'body' ? viewBody() : v === 'settings' ? viewSettings() : viewHome();
+  $('#app').innerHTML = html + (S.view === 'session' ? timerBar() : navBar());
+  const first = $('#app .view'); if (first && S.anim) first.classList.add('anim');
+  S.anim = false; S.newKey = null;
+  setSync(); tick(); autoGrowAll();
+}
+function softRender() { if (S.view === 'session' || S.view === 'routineEdit' || (document.activeElement && document.activeElement.matches('#app input, #app textarea'))) { setSync(); return; } const y = window.scrollY; render(); window.scrollTo(0, y); }
+function go(view) { S.view = view; if (view !== 'settings') S.exportText = null; S.anim = true; render(); window.scrollTo(0, 0); }
+
+/* ---------- session logic ---------- */
+// New sets come pre-filled. Working sets take last time's working sets in order; warm-ups take last time's warm-ups.
+// When there is no history for a set, the routine's planned numbers are used.
+const hasVal = p => p && (p.r != null || p.w != null);
+function prefillSets(exId, plan) {
+  const last = lastFor(exId, null);
+  const lastW = last ? last.sets.filter(x => x.t !== 'w') : [], lastU = last ? last.sets.filter(x => x.t === 'w') : [];
+  const shape = plan && plan.length ? plan : last ? last.sets : [{}, {}, {}];
+  let wi = 0, ui = 0;
+  return shape.map(p => {
+    const warm = p.t === 'w';
+    const src = warm ? (lastU[ui++] || (hasVal(p) ? p : null)) : (lastW[wi++] || (hasVal(p) ? p : null) || lastW[lastW.length - 1] || null);
+    return { w:src ? src.w ?? null : null, r:src ? src.r ?? null : null, done:false, ...keepT(p) };
+  });
+}
+function startRoutine(routine) {
+  const act = activeSession();
+  if (act) { toast(t('activeExists')); S.prevView = 'home'; openSession(act.id); return; }
+  startSession(routine);
+}
+function startSession(routine) {
+  const s = { id:newId(), startedAt:Date.now(), endedAt:null, routineId:routine ? routine.id : null, routineName:routine ? routine.name : '', notes:'', items:[] };
+  if (routine) for (const r of routine.items) {
+    const plan = clone(r.sets);
+    s.items.push({ exId:r.exId, note:'', plan, sets:prefillSets(r.exId, plan) });
+  }
+  S.sessions.set(s.id, s);
+  saveSession(s, 0);
+  S.prevView = 'home';
+  openSession(s.id);
+}
+function openSession(id) { S.editId = id; go('session'); wake(true); }
+function leaveSession() { swStop(true); const s = cur(); if (s) saveSession(s, 0); S.editId = null; wake(false); go(s && !s.endedAt ? 'home' : (S.prevView || 'home')); }
+const cur = () => S.sessions.get(S.editId);
+
+async function finishSession() {
+  const s = cur(); if (!s) return;
+  swStop(true);
+  const pending = s.items.reduce((a, it) => a + it.sets.filter(x => !x.done && x.r != null).length, 0);
+  let logAll = false;
+  if (pending) { const ans = await choose(t('pendingQ', pending), t('logThem'), t('dropThem'), false); if (ans === null) return; logAll = ans === 'ok'; }
+  const cleaned = s.items.map(it => ({ ...it, sets:it.sets.filter(x => x.done || (logAll && x.r != null)) })).filter(it => it.sets.length || it.note);
+  if (!cleaned.length) {
+    if (await ask(t('emptyFinishQ'), t('discard'))) { stopTimer(); removeSession(s.id); S.editId = null; wake(false); go('home'); }
+    return;
+  }
+  s.items = cleaned.map(({ _noteOpen, ...it }) => it);
+  for (const it of s.items) for (const x of it.sets) if (x.r != null) x.done = true;
+  s.endedAt = Date.now();
+  stopTimer(); saveSession(s, 0);
+  S.editId = null; wake(false);
+  const prs = s.items.reduce((a, it) => a + it.sets.filter(x => x.pr).length, 0);
+  go('home'); toast(prs ? t('savedPR', prs) : t('saved'));
+}
+
+function completeSet(s, i, j) {
+  const it = s.items[i], x = it.sets[j];
+  x.done = true; delete x.pr;
+  const pr = checkPR(s, it.exId, x);
+  if (pr) { x.pr = pr.k; toast(t({ w:'prW', e:'prE', r:'prR', t:'prT' }[pr.k], pr.v)); }
+  if (!s.endedAt) { const rs = restFor(it.exId); if (rs > 0) startTimer(rs); }
+  saveSession(s);
+}
+/* stopwatch for timed sets */
+const sw = { on:false, sid:null, i:-1, j:-1, start:0, target:null, beeped:false };
+function swStart(s, i, j) {
+  if (sw.on) swStop(true);
+  const x = s.items[i].sets[j];
+  stopTimer();
+  Object.assign(sw, { on:true, sid:s.id, i, j, start:Date.now(), target:x.r || normNum($(`#r-${i}-${j}`)?.placeholder) || null, beeped:false });
+  x.done = false; delete x.pr;
+  render();
+}
+function swStop(silent) {
+  if (!sw.on) return;
+  sw.on = false;
+  const s = S.sessions.get(sw.sid); const x = s && s.items[sw.i] && s.items[sw.i].sets[sw.j];
+  if (!x) return;
+  x.r = Math.max(1, Math.round((Date.now() - sw.start) / 1000));
+  if (silent) { saveSession(s); return; }
+  completeSet(s, sw.i, sw.j);
+  if (S.view === 'session') render();
+}
+/* timer */
+let audioCtx = null;
+function ensureAudio() { try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); } catch {} }
+function beep() {
+  try { if (!audioCtx) return; const now = audioCtx.currentTime;
+    [0, .28, .56].forEach((d, k) => { const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.frequency.value = k === 2 ? 1175 : 880; o.type = 'sine'; g.gain.setValueAtTime(.0001, now + d); g.gain.exponentialRampToValueAtTime(.35, now + d + .02); g.gain.exponentialRampToValueAtTime(.0001, now + d + .22); o.connect(g).connect(audioCtx.destination); o.start(now + d); o.stop(now + d + .25); });
+  } catch {}
+  try { navigator.vibrate && navigator.vibrate([250, 120, 250]); } catch {}
+}
+function startTimer(sec) { timer.total = sec; timer.end = Date.now() + sec * 1000; timer.running = true; if (S.view === 'session') { $('#timer')?.remove(); $('#app').insertAdjacentHTML('beforeend', timerBar()); tick(); } }
+function stopTimer() { timer.running = false; $('#timer')?.remove(); }
+function tick() {
+  const s = S.view === 'session' ? cur() : null;
+  const el = $('#elapsed'); if (el && s && !s.endedAt) el.textContent = hmm(Date.now() - s.startedAt);
+  if (sw.on && s && s.id === sw.sid) {
+    const secs = Math.floor((Date.now() - sw.start) / 1000);
+    const inp = $(`#r-${sw.i}-${sw.j}`); if (inp && document.activeElement !== inp) inp.value = secs;
+    if (sw.target && secs >= sw.target && !sw.beeped) { sw.beeped = true; beep(); }
+  }
+  if (!timer.running) return;
+  const left = (timer.end - Date.now()) / 1000;
+  if (left <= 0) {
+    timer.running = false; beep();
+    const tEl = $('#timer'); if (tEl) { tEl.classList.add('ring'); const tt = $('#ttime'); if (tt) tt.textContent = '0:00'; setTimeout(() => { if (!timer.running) tEl.remove(); }, 2000); }
+    return;
+  }
+  const tt = $('#ttime'); if (tt) tt.textContent = mmss(left);
+  const bar = $('#tbar'); if (bar) bar.style.width = (100 - Math.min(100, left / timer.total * 100)) + '%';
+}
+setInterval(tick, 250);
+
+let wakeLock = null;
+async function wake(on) {
+  try {
+    if (on && !wakeLock && navigator.wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => wakeLock = null); }
+    else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch { wakeLock = null; }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.view === 'session') wake(true); });
+
+/* ---------- exercise picker ---------- */
+function openPicker(target) {
+  S.pick = { target, q:'', g:null, e:null, open:null };
+  const body = `<input class="input" id="pickSearch" type="search" placeholder="${esc(t('search'))}" autocomplete="off">
+    <div class="filters" id="pickFilters"></div><div id="pickPanel"></div><div id="pickList" style="display:flex;flex-direction:column;gap:14px"></div>`;
+  openSheet(t('pickTitle'), body, el => {
+    const inp = el.querySelector('#pickSearch');
+    inp.addEventListener('input', () => { S.pick.q = inp.value; fillPicker(); });
+    fillPicker();
+  });
+}
+function fillPicker() {
+  const P = S.pick;
+  const fb = (k, label, val) => `<button class="fbtn ${val ? 'on' : ''}" data-act="fOpen" data-k="${k}" aria-expanded="${P.open === k}">
+    <span class="txt"><span class="fl">${esc(label)}</span><span class="fv">${esc(val ? t((k === 'g' ? 'g_' : 'e_') + val) : t('all'))}</span></span><span class="car">${ICON.caret}</span></button>`;
+  $('#pickFilters').innerHTML = fb('g', t('fMuscle'), P.g) + fb('e', t('fEquip'), P.e);
+  const panel = $('#pickPanel');
+  if (P.open) {
+    const opts = P.open === 'g' ? GROUPS : EQUIP;
+    const curV = P[P.open];
+    panel.innerHTML = `<div class="chips"><button class="chip" data-act="fSet" data-k="${P.open}" data-v="" aria-pressed="${!curV}">${esc(t('all'))}</button>${opts.map(o => `<button class="chip" data-act="fSet" data-k="${P.open}" data-v="${o}" aria-pressed="${curV === o}">${esc(t((P.open === 'g' ? 'g_' : 'e_') + o))}</button>`).join('')}</div>`;
+  } else panel.innerHTML = '';
+
+  const query = P.q.trim().toLowerCase();
+  const inNow = new Set((P.target === 'session' ? (cur()?.items || []) : (S.routineDraft?.items || [])).map(i => i.exId));
+  const all = [...PRESETS, ...S.profile.custom.filter(c => !c.hidden)];
+  const match = ex => (!query || [ex.ar, ex.en, ex.name].some(n => n && n.toLowerCase().includes(query))) && (!P.g || ex.g === P.g) && (!P.e || ex.e === P.e);
+  let html = '';
+  if (query && !all.some(ex => [ex.ar, ex.en, ex.name].some(n => n && n.toLowerCase() === query))) {
+    html += `<div class="add-custom">
+      <select id="customGroup" aria-label="${esc(t('fMuscle'))}">${GROUPS.map(g => `<option value="${g}" ${g === (P.g || 'other') ? 'selected' : ''}>${esc(t('g_' + g))}</option>`).join('')}</select>
+      <select id="customEquip" aria-label="${esc(t('fEquip'))}">${EQUIP.map(e => `<option value="${e}" ${e === (P.e || 'dumbbell') ? 'selected' : ''}>${esc(t('e_' + e))}</option>`).join('')}</select>
+      <select id="customMode" aria-label="mode">${MODES.map(m => `<option value="${m}" ${m === (P.e === 'bodyweight' ? 'r' : 'wr') ? 'selected' : ''}>${esc(t('m_' + m))}</option>`).join('')}</select>
+      <button class="btn primary" data-act="addCustom">${esc(t('addCustom', P.q.trim()))}</button></div>`;
+  }
+  let any = false;
+  for (const g of GROUPS) {
+    const list = all.filter(ex => (ex.g || 'other') === g && match(ex));
+    if (!list.length) continue;
+    any = true;
+    html += `<div class="pick-group"><div class="label">${esc(t('g_' + g))}</div>${list.map(ex => `<button class="pick-item ${inNow.has(ex.id) ? 'in' : ''}" data-act="pick" data-id="${esc(ex.id)}"><span class="nm">${esc(exName(ex))}</span><small>${esc(inNow.has(ex.id) ? t('inSession') : t('e_' + ex.e) + (ex.m === 't' ? ' · ' + t('secs') : ''))}</small></button>`).join('')}</div>`;
+  }
+  if (!any && !query) html += `<div class="empty">${esc(t('noMatch'))}</div>`;
+  $('#pickList').innerHTML = html;
+}
+function pickExercise(exId) {
+  closeSheet();
+  const last = lastFor(exId, S.pick.target === 'session' ? S.editId : null);
+  if (S.pick.target === 'session') {
+    const s = cur(); if (!s) return;
+    s.items.push({ exId, note:'', plan:[], sets:prefillSets(exId, null) });
+    S.newKey = null; saveSession(s); render();
+    const cards = document.querySelectorAll('.ex'); const lastCard = cards[cards.length - 1];
+    if (lastCard) { lastCard.classList.add('new'); lastCard.scrollIntoView({ block:'center', behavior:'smooth' }); }
+  } else if (S.pick.target === 'routine' && S.routineDraft) {
+    const sets = last ? last.sets.map(x => ({ w:x.w ?? null, r:x.r ?? null })) : Array.from({ length:3 }, emptySet);
+    S.routineDraft.items.push({ exId, sets });
+    S.newKey = 'rex' + (S.routineDraft.items.length - 1);
+    render();
+    const cards = document.querySelectorAll('.ex'); cards[cards.length - 1]?.scrollIntoView({ block:'center', behavior:'smooth' });
+  }
+}
+
+/* ---------- backup ---------- */
+async function doExport() {
+  const text = JSON.stringify({ app:'rep-log', version:2, exportedAt:new Date().toISOString(), profile:S.profile, sessions:sortedSessions().map(stripUI), measures:[...S.measures.values()] }, null, 1);
+  const name = `rep-log-${new Date().toISOString().slice(0, 10)}.json`;
+  let dl = null;
+  try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch {}
+  if (dl) {
+    try { await dl.save({ filename:name, data:text }); toast(t('exported')); return; }
+    catch (e) { if (e && e.code === 'declined') return; }
+  }
+  if (!window.claude) {
+    try {
+      const file = new File([text], name, { type:'application/json' });
+      if (navigator.canShare && navigator.canShare({ files:[file] })) { await navigator.share({ files:[file], title:name }); toast(t('exported')); return; }
+    } catch (e) { if (e && e.name === 'AbortError') return; }
+    try { const url = URL.createObjectURL(new Blob([text], { type:'application/json' })); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000); toast(t('exported')); return; } catch {}
+  }
+  S.exportText = text; render();
+  requestAnimationFrame(() => $('#exportBox')?.scrollIntoView({ block:'center' }));
+}
+async function doImport(text) {
+  let d;
+  try { d = JSON.parse(text); } catch { toast(t('badFile')); return; }
+  if (!d || d.app !== 'rep-log' || !Array.isArray(d.sessions)) { toast(t('badFile')); return; }
+  const sessions = d.sessions.map(normalizeSession).filter(Boolean);
+  if (!await ask(t('importQ', sessions.length), t('import'), false)) return;
+  S.profile = normalizeProfile(d.profile); LANG = S.profile.lang; applyLang();
+  saveProfile();
+  for (const s of sessions) S.sessions.set(s.id, s);
+  const measures = (Array.isArray(d.measures) ? d.measures : []).map(normalizeMeasure).filter(Boolean);
+  for (const m of measures) S.measures.set(m.id, m);
+  if (Store.mode === 'cloud') {
+    S.saving = true; setSync();
+    for (const s of sessions) { try { await Store.sessCol().doc(s.id).set(clone(s)); } catch { toast(t('saveFail')); break; } }
+    for (const m of measures) { try { await Store.measCol().doc(m.id).set(clone(m)); } catch { toast(t('saveFail')); break; } }
+    if (!Store.writes.size) { S.saving = false; setSync(); }
+  } else persistLocal();
+  render(); toast(t('imported'));
+}
+
+/* ---------- events ---------- */
+const swap = (arr, a, b) => { [arr[a], arr[b]] = [arr[b], arr[a]]; };
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+  if (lp.fired && b.dataset.act === 'openSession') { lp.fired = false; return; }
+  const a = b.dataset.act, i = +b.dataset.i, j = +b.dataset.j;
+  const s = cur(), d = S.routineDraft;
+  switch (a) {
+    case 'nav': if (S.view === 'session') leaveSession(); go(b.dataset.v); break;
+    case 'closeSheet': closeSheet(); break;
+    case 'startMenu': {
+      ensureAudio();
+      const rs = S.profile.routines;
+      openSheet(t('chooseStart'), `${rs.map(r => `<button class="pick-item" data-act="startWith" data-id="${esc(r.id)}"><span class="nm"><b>${esc(r.name)}</b><br><small>${esc(t('exN', r.items.length))} · ${esc(t('setsN', r.items.reduce((a2, it) => a2 + it.sets.length, 0)))}</small></span>${ICON.chev}</button>`).join('')}
+        <button class="pick-item" data-act="startWith" data-id=""><span class="nm"><b>${esc(t('emptySession'))}</b><br><small>${esc(t('emptySessionHint'))}</small></span>${ICON.chev}</button>`);
+      break; }
+    case 'startWith': closeSheet(); startRoutine(S.profile.routines.find(r => r.id === b.dataset.id) || null); break;
+    case 'startRoutine': { ensureAudio(); const r = S.profile.routines.find(r => r.id === b.dataset.id); if (r) startRoutine(r); break; }
+    case 'openSession': ensureAudio(); S.prevView = S.view; openSession(b.dataset.id); break;
+    case 'leaveSession': leaveSession(); break;
+    case 'finish': finishSession(); break;
+    case 'discard': if (s && await ask(t('discardQ'), t('discard'))) { stopTimer(); removeSession(s.id); S.editId = null; wake(false); go('home'); } break;
+    case 'deleteSession': if (s && await ask(t('deleteSessionQ'), t('del'))) { removeSession(s.id); S.editId = null; wake(false); go(S.prevView === 'history' ? 'history' : 'home'); toast(t('deleted')); } break;
+    case 'toggleSet': {
+      ensureAudio();
+      const it = s.items[i], x = it.sets[j], bw = isBW(it.exId);
+      if (sw.on && sw.sid === s.id && sw.i === i && sw.j === j) { swStop(false); break; }
+      const wIn = $(`#w-${i}-${j}`), rIn = $(`#r-${i}-${j}`);
+      if (!x.done) {
+        if (!bw && x.w == null && wIn && wIn.placeholder) x.w = normNum(wIn.placeholder);
+        if (x.r == null && rIn && rIn.placeholder) x.r = normNum(rIn.placeholder);
+        if (x.r == null) { rIn && rIn.focus(); return; }
+        completeSet(s, i, j);
+      } else { x.done = false; delete x.pr; saveSession(s); }
+      const row = b.closest('.set'); row.classList.toggle('done', x.done); row.classList.toggle('pr', !!x.pr); b.setAttribute('aria-pressed', x.done); b.innerHTML = x.pr ? ICON.trophy : ICON.check;
+      if (wIn) wIn.value = fmtW(x.w); if (rIn) rIn.value = x.r ?? '';
+      break; }
+    case 'addSet': { const sets = s.items[i].sets; const prev = sets[sets.length - 1]; sets.push({ w:prev ? prev.w : null, r:prev ? prev.r : null, done:false }); S.newKey = `${i}-${sets.length - 1}`; saveSession(s); render(); break; }
+    case 'removeSet': swStop(true); s.items[i].sets.pop(); saveSession(s); render(); break;
+    case 'noteOpen': s.items[i]._noteOpen = true; render(); $(`#exnote-${i}`)?.focus(); break;
+    case 'exUp': swStop(true); if (i > 0) { swap(s.items, i - 1, i); saveSession(s); render(); } break;
+    case 'exDown': swStop(true); if (i < s.items.length - 1) { swap(s.items, i + 1, i); saveSession(s); render(); } break;
+    case 'exRemove': swStop(true); if (await ask(t('removeExQ', nameOf(s.items[i].exId)), t('remove'))) { s.items.splice(i, 1); saveSession(s); render(); } break;
+    case 'pickForSession': openPicker('session'); break;
+    case 'pickForRoutine': openPicker('routine'); break;
+    case 'pick': pickExercise(b.dataset.id); break;
+    case 'fOpen': S.pick.open = S.pick.open === b.dataset.k ? null : b.dataset.k; fillPicker(); break;
+    case 'fSet': S.pick[b.dataset.k] = b.dataset.v || null; S.pick.open = null; fillPicker(); break;
+    case 'addCustom': {
+      const name = S.pick.q.trim(); if (!name) return;
+      const c = { id:'c_' + newId(), g:$('#customGroup')?.value || 'other', e:$('#customEquip')?.value || 'other', m:$('#customMode')?.value || 'wr', name };
+      S.profile.custom.push(c); saveProfile(); pickExercise(c.id); break; }
+    case 'tAdj': timer.end += (+b.dataset.d) * 1000; timer.total = Math.max(timer.total, (timer.end - Date.now()) / 1000); tick(); break;
+    case 'tStop': stopTimer(); break;
+    case 'sw': ensureAudio(); if (sw.on && sw.sid === s.id && sw.i === i && sw.j === j) swStop(false); else swStart(s, i, j); break;
+    case 'setType': case 'rSetType': {
+      const x = (a === 'setType' ? s.items[i] : d.items[i]).sets[j];
+      const order = [undefined, 'w', 'f', 'd'];
+      const nx = order[(order.indexOf(x.t) + 1) % order.length];
+      if (nx) x.t = nx; else delete x.t;
+      if (x.t === 'w') delete x.pr;
+      if (a === 'setType') saveSession(s);
+      render(); toast(t(x.t ? 'tyName_' + x.t : 'tyNormal')); break; }
+    case 'histTab': S.histTab = b.dataset.v; render(); break;
+    case 'howto': openHowTo(b.dataset.ex); break;
+    case 'openFromSheet': closeSheet(); S.prevView = S.view; openSession(b.dataset.id); break;
+    case 'delFromHist': {
+      const id = b.dataset.id; closeSheet();
+      if (await ask(t('deleteSessionQ'), t('del'))) { removeSession(id); render(); toast(t('deleted')); }
+      break; }
+    case 'mzMore': S.mDraft.more = !S.mDraft.more; render(); break;
+    case 'saveMeasure': {
+      const D = S.mDraft, m = { id:newId(), at:new Date((D.date || todayISO()) + 'T12:00:00').getTime() };
+      for (const [k] of MKEYS) { const v = normNum(D[k]); if (v != null && v > 0) m[k] = v; }
+      if (Object.keys(m).length <= 2) { toast(t('enterOne')); return; }
+      saveMeasure(m); S.mDraft = { date:todayISO(), more:D.more }; render(); toast(t('measureSaved')); break; }
+    case 'delMeasure': if (await ask(t('delMeasureQ'), t('del'))) { removeMeasure(b.dataset.id); render(); } break;
+    case 'restPick': {
+      const exId = b.dataset.ex, curV = S.profile.rest[exId];
+      const opts = [0, 15, 30, 45, 60, 90, 120, 150, 180, 240];
+      const def = exById(exId).g === 'stretch' ? 15 : S.profile.restSec;
+      openSheet(t('restTitle', nameOf(exId)), `<span class="muted" style="font-size:13px">${esc(t('restHint'))}</span>
+        <div class="chips"><button class="chip" data-act="restSet" data-ex="${esc(exId)}" data-v="" aria-pressed="${curV == null}">${esc(t('restUseDefault', restLabel(def)))}</button>
+        ${opts.map(o => `<button class="chip" data-act="restSet" data-ex="${esc(exId)}" data-v="${o}" aria-pressed="${curV === o}">${esc(restLabel(o))}</button>`).join('')}</div>`);
+      break; }
+    case 'restSet': {
+      const exId = b.dataset.ex;
+      if (b.dataset.v === '') delete S.profile.rest[exId]; else S.profile.rest[exId] = +b.dataset.v;
+      saveProfile(); closeSheet(); render(); break; }
+    case 'newRoutine': S.routineDraft = { id:newId(), name:'', items:[] }; go('routineEdit'); setTimeout(() => $('#rname')?.focus(), 60); break;
+    case 'editRoutine': { const r = S.profile.routines.find(r => r.id === b.dataset.id); if (r) { S.routineDraft = clone(r); go('routineEdit'); } break; }
+    case 'rAddSet': { const sets = d.items[i].sets; const prev = sets[sets.length - 1]; sets.push({ w:prev ? prev.w : null, r:prev ? prev.r : null }); S.newKey = `r${i}-${sets.length - 1}`; render(); break; }
+    case 'rDelSet': if (d.items[i].sets.length > 1) { d.items[i].sets.splice(j, 1); render(); } break;
+    case 'rUp': if (i > 0) { swap(d.items, i - 1, i); render(); } break;
+    case 'rDown': if (i < d.items.length - 1) { swap(d.items, i + 1, i); render(); } break;
+    case 'rRemove': if (await ask(t('removeExQ', nameOf(d.items[i].exId)), t('remove'))) { d.items.splice(i, 1); render(); } break;
+    case 'saveRoutine': case 'saveStart': {
+      d.name = ($('#rname')?.value || '').trim();
+      if (!d.name) { toast(t('routineNeedsName')); $('#rname')?.focus(); return; }
+      const idx = S.profile.routines.findIndex(r => r.id === d.id);
+      const saved = clone(d);
+      if (idx >= 0) S.profile.routines[idx] = saved; else S.profile.routines.push(saved);
+      saveProfile(); S.routineDraft = null;
+      if (a === 'saveStart') { ensureAudio(); startRoutine(saved); }
+      else { go('routines'); toast(t('routineSaved')); }
+      break; }
+    case 'deleteRoutine':
+      if (await ask(t('deleteRoutineQ', d.name || '—'), t('del'))) { S.profile.routines = S.profile.routines.filter(r => r.id !== d.id); saveProfile(); S.routineDraft = null; go('routines'); }
+      break;
+    case 'setLang': S.profile.lang = b.dataset.v; LANG = b.dataset.v; applyLang(); saveProfile(); render(); break;
+    case 'setRest': S.profile.restSec = +b.dataset.v; saveProfile(); render(); break;
+    case 'delCustom': { const c = S.profile.custom.find(c => c.id === b.dataset.id); if (c && await ask(t('deleteExQ', c.name), t('del'))) { c.hidden = true; S.profile.routines.forEach(r => r.items = r.items.filter(it => it.exId !== c.id)); saveProfile(); render(); } break; }
+    case 'export': doExport(); break;
+    case 'copyExport': {
+      const box = $('#exportBox');
+      try { await navigator.clipboard.writeText(S.exportText); toast(t('copied')); } catch { if (box) { box.focus(); box.select(); } }
+      break; }
+    case 'importText': { const v = $('#importBox')?.value || ''; if (v.trim()) doImport(v); break; }
+  }
+});
+document.addEventListener('input', e => {
+  const el = e.target, f = el.dataset && el.dataset.f; if (!f) return;
+  const s = cur(), d = S.routineDraft;
+  const n = normNum(el.value);
+  if (f === 'w' || f === 'r') { s.items[+el.dataset.i].sets[+el.dataset.j][f] = f === 'r' && n != null ? Math.round(n) : n; saveSession(s, 900); }
+  else if (f === 'rw' || f === 'rr') { d.items[+el.dataset.i].sets[+el.dataset.j][f === 'rw' ? 'w' : 'r'] = f === 'rr' && n != null ? Math.round(n) : n; }
+  else if (f === 'snote') { s.notes = el.value; saveSession(s, 900); autoGrow(el); }
+  else if (f === 'exnote') { s.items[+el.dataset.i].note = el.value; saveSession(s, 900); autoGrow(el); }
+  else if (f === 'rname') { d.name = el.value; }
+  else if (f === 'mz') { S.mDraft[el.dataset.k] = el.value; }
+  else if (f === 'mzdate') { S.mDraft.date = el.value; }
+});
+document.addEventListener('focusin', e => { if (e.target.matches && e.target.matches('.set input')) e.target.select(); });
+document.addEventListener('change', e => {
+  if (e.target.id === 'importFile' && e.target.files && e.target.files[0]) {
+    const fr = new FileReader(); fr.onload = () => doImport(String(fr.result || '')); fr.readAsText(e.target.files[0]); e.target.value = '';
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetEl) closeSheet(); });
+/* long-press on a session row opens its actions */
+const lp = { t:0, fired:false, x:0, y:0, on:false };
+function sessionActions(id) {
+  const s = S.sessions.get(id); if (!s) return;
+  const title = `${s.routineName || t('freeSession')} · ${fmtDate(s.startedAt, { weekday:'short', day:'numeric', month:'short' })}`;
+  openSheet(title, `<button class="pick-item" data-act="openFromSheet" data-id="${esc(id)}"><span class="nm">${esc(t('actOpen'))}</span>${ICON.chev}</button>
+    <button class="pick-item danger" data-act="delFromHist" data-id="${esc(id)}"><span class="nm">${esc(t('actDelete'))}</span>${ICON.x.replace('<svg', '<svg width="18" height="18"')}</button>`);
+}
+document.addEventListener('pointerdown', e => {
+  const row = e.target.closest('.row[data-act="openSession"]'); if (!row) return;
+  lp.fired = false; lp.on = true; lp.x = e.clientX; lp.y = e.clientY; clearTimeout(lp.t);
+  lp.t = setTimeout(() => { if (!lp.on) return; lp.fired = true; try { navigator.vibrate && navigator.vibrate(30); } catch {} sessionActions(row.dataset.id); }, 500);
+});
+document.addEventListener('pointermove', e => { if (lp.on && Math.hypot(e.clientX - lp.x, e.clientY - lp.y) > 10) { lp.on = false; clearTimeout(lp.t); } });
+['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => { lp.on = false; clearTimeout(lp.t); }));
+document.addEventListener('contextmenu', e => { if (e.target.closest('.row[data-act="openSession"]')) e.preventDefault(); });
+window.addEventListener('scroll', () => { const tb = document.querySelector('.topbar'); if (tb) tb.classList.toggle('scrolled', window.scrollY > 4); }, { passive:true });
+function autoGrow(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 2 + 'px'; }
+function autoGrowAll() { document.querySelectorAll('.note-area, .ex-note').forEach(el => { if (el.value) autoGrow(el); }); }
+
+applyLang();
+render();
+initStore();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('./sw.js').catch(() => {});
+})();
+</script>
+
+</body>
+</html>
