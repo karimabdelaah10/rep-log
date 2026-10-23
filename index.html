@@ -521,7 +521,7 @@ const FP_SLUGS = { bench:'bench-press', incline_bb:'incline-barbell-bench-press'
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '8';
+const APP_VERSION = '9';
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
 const MKEYS = [['weight','kg'],['waist','cm'],['fat','pct'],['chest','cm'],['arm','cm'],['thigh','cm'],['hips','cm']];
@@ -721,6 +721,7 @@ const I18N = {
     muscles:'العضلات', steps:'الخطوات', tip:'نصيحة', fpBtn:'شوف الـ GIF على FitnessProgramer', ytBtn:'فيديو على يوتيوب', noGuide:'مفيش شرح مكتوب للتمرين ده لأنك ضفته بنفسك. استخدم الزراير اللي تحت.',
     fArea:'المنطقة', stretchesFor:n=>`إطالات لـ${n}`,
     a_neck:'الرقبة', a_shoulders:'الأكتاف', a_chest:'الصدر', a_back:'الضهر', a_lowback:'أسفل الضهر', a_arms:'الدراع', a_hips:'الحوض ومثنية الفخذ', a_glutes:'الألوية', a_quads:'الأمامية', a_hamstrings:'الخلفية', a_calves:'السمانة',
+    templates:'روتينات جاهزة', addTemplate:'+ أضفه لروتيناتي', templateAdded:'موجود عندك', templateDone:n=>`روتين «${n}» اتضاف`,
     navExercises:'التمارين', exCount:n=>`${n} تمرين`, yourBest:'أحسن أرقامك', addedCustom:'التمرين اتضاف لقايمتك', versionL:n=>`الإصدار ${n}`, updating:'فيه نسخة جديدة، بيتحدّث…',
     navBody:'الجسم', ty_w:'إ', ty_f:'ف', ty_d:'د', tyName_w:'إحماء', tyName_f:'للفشل', tyName_d:'دروب سيت', tyNormal:'مجموعة عادية', setTypeA:'نوع المجموعة',
     setTypeHint:'اضغط على رقم المجموعة عشان تعلّمها إحماء (إ) أو للفشل (ف) أو دروب سيت (د). الإحماء ما بيدخلش في الأرقام القياسية.',
@@ -786,6 +787,7 @@ const I18N = {
     muscles:'Muscles', steps:'Steps', tip:'Tip', fpBtn:'See the GIF on FitnessProgramer', ytBtn:'YouTube video', noGuide:'No written guide for exercises you added yourself. Use the links below.',
     fArea:'Area', stretchesFor:n=>`Stretches for ${n}`,
     a_neck:'Neck', a_shoulders:'Shoulders', a_chest:'Chest', a_back:'Back', a_lowback:'Lower back', a_arms:'Arms', a_hips:'Hips & hip flexors', a_glutes:'Glutes', a_quads:'Quads', a_hamstrings:'Hamstrings', a_calves:'Calves',
+    templates:'Ready-made routines', addTemplate:'+ Add to my routines', templateAdded:'Already added', templateDone:n=>`Routine “${n}” added`,
     navExercises:'Exercises', exCount:n=>`${n} exercises`, yourBest:'Your best', addedCustom:'Exercise added to your list', versionL:n=>`Version ${n}`, updating:'New version found, updating…',
     navBody:'Body', ty_w:'W', ty_f:'F', ty_d:'D', tyName_w:'Warm-up', tyName_f:'Failure', tyName_d:'Drop set', tyNormal:'Normal set', setTypeA:'Set type',
     setTypeHint:'Tap a set number to mark it warm-up (W), failure (F) or drop set (D). Warm-ups don’t count toward records.',
@@ -1279,6 +1281,12 @@ function exCard(s, it, i) {
   </article>`;
 }
 
+// Ready-made routines the user can copy into their own list.
+const TEMPLATES = [
+  { id:'back_chest', name:'Back & Chest', items:[
+    { exId:'iso_incline_press', sets:3 }, { exId:'tbar_row', sets:3 }, { exId:'bench', sets:3 },
+    { exId:'lat_pd', sets:3 }, { exId:'lying_cable_fly', sets:3 }, { exId:'iliac_pd', sets:3 } ] },
+];
 function viewRoutines() {
   const rs = S.profile.routines;
   return `<div class="view ${S.anim ? 'anim' : ''}"><header class="topbar"><h1>${esc(t('navRoutines'))}</h1>${syncBadge()}</header>
@@ -1287,6 +1295,11 @@ function viewRoutines() {
       <span class="r-ex">${esc(t('exN', r.items.length))} · ${esc(t('setsN', r.items.reduce((a, i) => a + i.sets.length, 0)))}${r.items.length ? ' · ' + esc(r.items.map(i => nameOf(i.exId)).join(SEP())) : ''}</span></button>
       <div class="r-acts"><button class="btn primary sm" data-act="startRoutine" data-id="${esc(r.id)}" ${r.items.length ? '' : 'disabled'}>${esc(t('startR'))}</button><button class="btn sm" data-act="editRoutine" data-id="${esc(r.id)}">${esc(t('edit'))}</button></div></div>`).join('') : `<div class="empty">${esc(t('routinesEmpty'))}</div>`}
     <button class="btn primary block" data-act="newRoutine" ${S.loaded ? '' : 'disabled'}>${esc(t('newRoutine'))}</button>
+    <section class="section"><div class="label">${esc(t('templates'))}</div>
+      ${TEMPLATES.map(tp => { const have = S.profile.routines.some(r => r.name === tp.name); return `<div class="r-card"><span class="r-name">${esc(tp.name)}</span>
+        <span class="r-ex">${esc(t('exN', tp.items.length))} · ${esc(t('setsN', tp.items.reduce((a, i) => a + i.sets, 0)))} · ${esc(tp.items.map(i => nameOf(i.exId)).join(SEP()))}</span>
+        <div class="r-acts"><button class="btn sm" data-act="addTemplate" data-id="${esc(tp.id)}" ${have || !S.loaded ? 'disabled' : ''}>${esc(have ? t('templateAdded') : t('addTemplate'))}</button></div></div>`; }).join('')}
+    </section>
   </div>`;
 }
 function viewRoutineEdit() {
@@ -1759,6 +1772,10 @@ document.addEventListener('click', async e => {
       const exId = b.dataset.ex;
       if (b.dataset.v === '') delete S.profile.rest[exId]; else S.profile.rest[exId] = +b.dataset.v;
       saveProfile(); closeSheet(); render(); break; }
+    case 'addTemplate': {
+      const tp = TEMPLATES.find(x => x.id === b.dataset.id); if (!tp) break;
+      S.profile.routines.push({ id:newId(), name:tp.name, items:tp.items.map(i => ({ exId:i.exId, sets:Array.from({ length:i.sets }, emptySet) })) });
+      saveProfile(); render(); toast(t('templateDone', tp.name)); break; }
     case 'newRoutine': S.routineDraft = { id:newId(), name:'', items:[] }; go('routineEdit'); setTimeout(() => $('#rname')?.focus(), 60); break;
     case 'editRoutine': { const r = S.profile.routines.find(r => r.id === b.dataset.id); if (r) { S.routineDraft = clone(r); go('routineEdit'); } break; }
     case 'rAddSet': { const sets = d.items[i].sets; const prev = sets[sets.length - 1]; sets.push({ w:prev ? prev.w : null, r:prev ? prev.r : null }); S.newKey = `r${i}-${sets.length - 1}`; render(); break; }
