@@ -556,6 +556,17 @@ const PRESETS = [
   ['s_band_shoulder','stretch','band','فتح الكتف بالأستك','Band Shoulder Dislocates'],
 ].map(([id,g,e,ar,en,m]) => ({id, g, e, ar, en, ...(m ? { m } : {})}));
 const PRESET_MAP = new Map(PRESETS.map(p => [p.id, p]));
+// Which body areas each stretch targets, and which muscle group each area belongs to.
+const AREAS = ['neck','shoulders','chest','back','lowback','arms','hips','glutes','quads','hamstrings','calves'];
+const AREA_GROUP = { neck:'shoulders', shoulders:'shoulders', chest:'chest', back:'back', lowback:'back', arms:'arms', hips:'legs', glutes:'legs', quads:'legs', hamstrings:'legs', calves:'legs' };
+const STRETCH_AREAS = {
+  s_hamstring:['hamstrings'], s_quad:['quads'], s_hipflexor:['hips'], s_couch:['quads','hips'], s_pigeon:['glutes','hips'],
+  s_figure4:['glutes'], s_9090:['hips','glutes'], s_butterfly:['hips'], s_forward:['hamstrings','lowback'], s_calf:['calves'],
+  s_child:['lowback','back','hips'], s_catcow:['back','lowback'], s_cobra:['lowback'], s_twist:['lowback','back'],
+  s_chest:['chest','shoulders'], s_crossbody:['shoulders'], s_triceps:['arms','shoulders'], s_lat:['back'], s_neck:['neck'],
+  s_wgs:['hips','hamstrings','back'], s_hang:['back','shoulders','arms'], s_band_shoulder:['shoulders','chest'],
+};
+const areasOf = id => STRETCH_AREAS[id] || [];
 
 /* ---------- i18n ---------- */
 const I18N = {
@@ -609,6 +620,8 @@ const I18N = {
     up:'لفوق', down:'لتحت', back:'رجوع', min:n=>`${n} د`,
     actOpen:'افتح الجلسة', actDelete:'امسح من السجل', longPressHint:'اضغط مطوّل على أي جلسة عشان تمسحها.',
     muscles:'العضلات', steps:'الخطوات', tip:'نصيحة', fpBtn:'شوف الـ GIF على FitnessProgramer', ytBtn:'فيديو على يوتيوب', noGuide:'مفيش شرح مكتوب للتمرين ده لأنك ضفته بنفسك. استخدم الزراير اللي تحت.',
+    fArea:'المنطقة', stretchesFor:n=>`إطالات لـ${n}`,
+    a_neck:'الرقبة', a_shoulders:'الأكتاف', a_chest:'الصدر', a_back:'الضهر', a_lowback:'أسفل الضهر', a_arms:'الدراع', a_hips:'الحوض ومثنية الفخذ', a_glutes:'الألوية', a_quads:'الأمامية', a_hamstrings:'الخلفية', a_calves:'السمانة',
     navBody:'الجسم', ty_w:'إ', ty_f:'ف', ty_d:'د', tyName_w:'إحماء', tyName_f:'للفشل', tyName_d:'دروب سيت', tyNormal:'مجموعة عادية', setTypeA:'نوع المجموعة',
     setTypeHint:'اضغط على رقم المجموعة عشان تعلّمها إحماء (إ) أو للفشل (ف) أو دروب سيت (د). الإحماء ما بيدخلش في الأرقام القياسية.',
     swStart:'ابدأ العد', swStop:'وقّف',
@@ -671,6 +684,8 @@ const I18N = {
     up:'Move up', down:'Move down', back:'Back', min:n=>`${n} min`,
     actOpen:'Open session', actDelete:'Delete from history', longPressHint:'Long-press a session to delete it.',
     muscles:'Muscles', steps:'Steps', tip:'Tip', fpBtn:'See the GIF on FitnessProgramer', ytBtn:'YouTube video', noGuide:'No written guide for exercises you added yourself. Use the links below.',
+    fArea:'Area', stretchesFor:n=>`Stretches for ${n}`,
+    a_neck:'Neck', a_shoulders:'Shoulders', a_chest:'Chest', a_back:'Back', a_lowback:'Lower back', a_arms:'Arms', a_hips:'Hips & hip flexors', a_glutes:'Glutes', a_quads:'Quads', a_hamstrings:'Hamstrings', a_calves:'Calves',
     navBody:'Body', ty_w:'W', ty_f:'F', ty_d:'D', tyName_w:'Warm-up', tyName_f:'Failure', tyName_d:'Drop set', tyNormal:'Normal set', setTypeA:'Set type',
     setTypeHint:'Tap a set number to mark it warm-up (W), failure (F) or drop set (D). Warm-ups don’t count toward records.',
     swStart:'Start stopwatch', swStop:'Stop',
@@ -863,7 +878,7 @@ function relDay(ts) {
 const fmtDate = (ts, o) => new Intl.DateTimeFormat(LOCALE(), o).format(ts);
 const mmss = sec => { sec = Math.max(0, Math.round(sec)); const m = Math.floor(sec / 60), s = sec % 60; return `${m}:${String(s).padStart(2,'0')}`; };
 const hmm = ms => { const m = Math.floor(ms / 60000); return m >= 60 ? `${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}` : t('min', m); };
-const exTags = ex => `<span class="tags"><span class="tag">${esc(t('g_' + (ex.g || 'other')))}</span><span class="tag">${esc(t('e_' + (ex.e || 'other')))}</span></span>`;
+const exTags = ex => `<span class="tags"><span class="tag">${esc(t('g_' + (ex.g || 'other')))}</span>${areasOf(ex.id).map(a => `<span class="tag">${esc(t('a_' + a))}</span>`).join('')}<span class="tag">${esc(t('e_' + (ex.e || 'other')))}</span></span>`;
 
 /* ---------- storage ---------- */
 const LS_KEY = 'rep-log-v1';
@@ -1412,7 +1427,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 
 /* ---------- exercise picker ---------- */
 function openPicker(target) {
-  S.pick = { target, q:'', g:null, e:null, open:null };
+  S.pick = { target, q:'', g:null, e:null, a:null, open:null };
   const body = `<input class="input" id="pickSearch" type="search" placeholder="${esc(t('search'))}" autocomplete="off">
     <div class="filters" id="pickFilters"></div><div id="pickPanel"></div><div id="pickList" style="display:flex;flex-direction:column;gap:14px"></div>`;
   openSheet(t('pickTitle'), body, el => {
@@ -1423,20 +1438,22 @@ function openPicker(target) {
 }
 function fillPicker() {
   const P = S.pick;
-  const fb = (k, label, val) => `<button class="fbtn ${val ? 'on' : ''}" data-act="fOpen" data-k="${k}" aria-expanded="${P.open === k}">
-    <span class="txt"><span class="fl">${esc(label)}</span><span class="fv">${esc(val ? t((k === 'g' ? 'g_' : 'e_') + val) : t('all'))}</span></span><span class="car">${ICON.caret}</span></button>`;
-  $('#pickFilters').innerHTML = fb('g', t('fMuscle'), P.g) + fb('e', t('fEquip'), P.e);
+  const pre = k => k === 'g' ? 'g_' : k === 'e' ? 'e_' : 'a_';
+  const fb = (k, label, val) => `<button class="fbtn ${val ? 'on' : ''}" data-act="fOpen" data-k="${k}" aria-expanded="${P.open === k}" ${k === 'a' ? 'style="grid-column:1/-1"' : ''}>
+    <span class="txt"><span class="fl">${esc(label)}</span><span class="fv">${esc(val ? t(pre(k) + val) : t('all'))}</span></span><span class="car">${ICON.caret}</span></button>`;
+  $('#pickFilters').innerHTML = fb('g', t('fMuscle'), P.g) + fb('e', t('fEquip'), P.e) + (P.g === 'stretch' ? fb('a', t('fArea'), P.a) : '');
   const panel = $('#pickPanel');
   if (P.open) {
-    const opts = P.open === 'g' ? GROUPS : EQUIP;
+    const opts = P.open === 'g' ? GROUPS : P.open === 'e' ? EQUIP : AREAS;
     const curV = P[P.open];
-    panel.innerHTML = `<div class="chips"><button class="chip" data-act="fSet" data-k="${P.open}" data-v="" aria-pressed="${!curV}">${esc(t('all'))}</button>${opts.map(o => `<button class="chip" data-act="fSet" data-k="${P.open}" data-v="${o}" aria-pressed="${curV === o}">${esc(t((P.open === 'g' ? 'g_' : 'e_') + o))}</button>`).join('')}</div>`;
+    panel.innerHTML = `<div class="chips"><button class="chip" data-act="fSet" data-k="${P.open}" data-v="" aria-pressed="${!curV}">${esc(t('all'))}</button>${opts.map(o => `<button class="chip" data-act="fSet" data-k="${P.open}" data-v="${o}" aria-pressed="${curV === o}">${esc(t(pre(P.open) + o))}</button>`).join('')}</div>`;
   } else panel.innerHTML = '';
 
   const query = P.q.trim().toLowerCase();
   const inNow = new Set((P.target === 'session' ? (cur()?.items || []) : (S.routineDraft?.items || [])).map(i => i.exId));
   const all = [...PRESETS, ...S.profile.custom.filter(c => !c.hidden)];
-  const match = ex => (!query || [ex.ar, ex.en, ex.name].some(n => n && n.toLowerCase().includes(query))) && (!P.g || ex.g === P.g) && (!P.e || ex.e === P.e);
+  const textOk = ex => !query || [ex.ar, ex.en, ex.name].some(n => n && n.toLowerCase().includes(query));
+  const match = ex => textOk(ex) && (!P.g || ex.g === P.g) && (!P.e || ex.e === P.e) && (!P.a || areasOf(ex.id).includes(P.a));
   let html = '';
   if (query && !all.some(ex => [ex.ar, ex.en, ex.name].some(n => n && n.toLowerCase() === query))) {
     html += `<div class="add-custom">
@@ -1450,7 +1467,12 @@ function fillPicker() {
     const list = all.filter(ex => (ex.g || 'other') === g && match(ex));
     if (!list.length) continue;
     any = true;
-    html += `<div class="pick-group"><div class="label">${esc(t('g_' + g))}</div>${list.map(ex => `<button class="pick-item ${inNow.has(ex.id) ? 'in' : ''}" data-act="pick" data-id="${esc(ex.id)}"><span class="nm">${esc(exName(ex))}</span><small>${esc(inNow.has(ex.id) ? t('inSession') : t('e_' + ex.e) + (ex.m === 't' ? ' · ' + t('secs') : ''))}</small></button>`).join('')}</div>`;
+    html += `<div class="pick-group"><div class="label">${esc(t('g_' + g))}</div>${list.map(ex => `<button class="pick-item ${inNow.has(ex.id) ? 'in' : ''}" data-act="pick" data-id="${esc(ex.id)}"><span class="nm">${esc(exName(ex))}</span><small>${esc(inNow.has(ex.id) ? t('inSession') : ex.g === 'stretch' && areasOf(ex.id).length ? areasOf(ex.id).map(a => t('a_' + a)).join(SEP()) : t('e_' + ex.e) + (ex.m === 't' ? ' · ' + t('secs') : ''))}</small></button>`).join('')}</div>`;
+  }
+  // stretches that suit the chosen muscle group
+  if (P.g && AREA_GROUP && !['stretch','core','other'].includes(P.g)) {
+    const rel = all.filter(ex => ex.g === 'stretch' && textOk(ex) && (!P.e || ex.e === P.e) && areasOf(ex.id).some(a => AREA_GROUP[a] === P.g));
+    if (rel.length) { any = true; html += `<div class="pick-group"><div class="label">${esc(t('stretchesFor', t('g_' + P.g)))}</div>${rel.map(ex => `<button class="pick-item ${inNow.has(ex.id) ? 'in' : ''}" data-act="pick" data-id="${esc(ex.id)}"><span class="nm">${esc(exName(ex))}</span><small>${esc(inNow.has(ex.id) ? t('inSession') : areasOf(ex.id).map(a => t('a_' + a)).join(SEP()))}</small></button>`).join('')}</div>`; }
   }
   if (!any && !query) html += `<div class="empty">${esc(t('noMatch'))}</div>`;
   $('#pickList').innerHTML = html;
@@ -1560,7 +1582,7 @@ document.addEventListener('click', async e => {
     case 'pickForRoutine': openPicker('routine'); break;
     case 'pick': pickExercise(b.dataset.id); break;
     case 'fOpen': S.pick.open = S.pick.open === b.dataset.k ? null : b.dataset.k; fillPicker(); break;
-    case 'fSet': S.pick[b.dataset.k] = b.dataset.v || null; S.pick.open = null; fillPicker(); break;
+    case 'fSet': S.pick[b.dataset.k] = b.dataset.v || null; if (b.dataset.k === 'g' && S.pick.g !== 'stretch') S.pick.a = null; S.pick.open = (b.dataset.k === 'g' && S.pick.g === 'stretch') ? 'a' : null; fillPicker(); break;
     case 'addCustom': {
       const name = S.pick.q.trim(); if (!name) return;
       const c = { id:'c_' + newId(), g:$('#customGroup')?.value || 'other', e:$('#customEquip')?.value || 'other', m:$('#customMode')?.value || 'wr', name };
