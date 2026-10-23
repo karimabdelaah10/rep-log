@@ -1,6 +1,6 @@
 // Network-first for the app page (so updates show on the next open), cache fallback when offline.
 // Icons and fonts: cache-first. Install bypasses the HTTP cache so a new version never caches the old page.
-const CACHE = 'rep-log-v14';
+const CACHE = 'rep-log-v15';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(SHELL.map(u => fetch(new Request(u, { cache:'reload' })).then(r => r.ok && c.put(u, r))))).then(() => self.skipWaiting()));
@@ -20,7 +20,7 @@ self.addEventListener('fetch', e => {
     }).catch(() => caches.match('./index.html').then(r => r || caches.match('./'))));
     return;
   }
-  const cacheable = url.origin === location.origin || url.host === 'fonts.googleapis.com' || url.host === 'fonts.gstatic.com';
+  const cacheable = url.origin === location.origin || url.host === 'fonts.googleapis.com' || url.host === 'fonts.gstatic.com' || url.host === 'static.exercisedb.dev';
   if (!cacheable) return;
   e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(res => {
     if (res && (res.ok || res.type === 'opaque')) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
