@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>سجل التمرين</title>
 <meta name="description" content="سجّل تمارينك ومجموعاتك وأرقامك القياسية وقياسات جسمك.">
 <link rel="manifest" href="manifest.webmanifest">
@@ -195,6 +195,25 @@ button.no:hover{background:var(--surface-2)}
 .rest-pick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .rest-pick button{height:52px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow);font-family:var(--f-disp);font-weight:800;font-size:17px}
 .rest-pick button:active{transform:scale(.96)}
+.timer button.t-time{background:none;height:auto;min-width:80px;padding:0;font-size:34px}
+.nav .timer{position:static;border-radius:16px;margin:8px 0 2px;padding:0 12px;box-shadow:0 4px 14px rgb(2 132 199 / .25)}
+.nav .timer .timer-in{padding-block:8px}
+.nav .timer button{flex-direction:row;padding-block:0;font-size:17px;color:inherit;gap:6px;overflow:visible;font-weight:800}
+.nav .timer button.t-more{color:var(--sun);font-size:15px}
+.nav .live-pill{flex-direction:row;padding-block:11px;font-size:14px;color:var(--accent);font-weight:800;gap:10px}
+.nav .live-pill #liveEl{font-family:var(--f-disp);font-variant-numeric:tabular-nums}
+.nav .timer button.t-time{font-size:26px;min-width:64px}
+.live-pill{display:flex;align-items:center;gap:10px;width:100%;margin:8px 0 2px;padding:11px 14px;border-radius:16px;background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:14px}
+.live-pill i{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:pulse 1.4s infinite;flex:none}
+.live-pill .grow{flex:1;min-width:0;text-align:start;color:var(--ink);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.has-live #app{padding-bottom:calc(170px + env(safe-area-inset-bottom,0px))}
+.rs-val{font-family:var(--f-disp);font-size:48px;font-weight:800;text-align:center;line-height:1.1;font-variant-numeric:tabular-nums}
+.rs-sub{text-align:center;font-size:13px;color:var(--muted);margin-top:-6px}
+.rs-step{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.rs-step button{height:48px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow);font-family:var(--f-disp);font-weight:800;font-size:17px}
+.rs-step button:active{transform:scale(.95)}
+html,body{touch-action:manipulation}
+@supports (-webkit-touch-callout:none){input,textarea,select{font-size:max(16px,1em)}}
 
 /* routines */
 .r-card{background:var(--surface);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
@@ -569,7 +588,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '51';
+const APP_VERSION = '52';
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
 const MKEYS = [['weight','kg'],['waist','cm'],['fat','pct'],['chest','cm'],['arm','cm'],['thigh','cm'],['hips','cm']];
@@ -738,7 +757,7 @@ const I18N = {
     sessionNote:'ملاحظات الجلسة', notePh:'إزاي كان التمرين النهارده؟', exNotePh:'ملاحظة على التمرين ده',
     addSet:'+ مجموعة', removeSet:'− آخر مجموعة', note:'ملاحظة', addExercise:'+ أضف تمرين',
     last:'آخر مرة', noLast:'أول مرة تسجّل التمرين ده', plan:'الهدف',
-    rest:'راحة', skip:'تخطّي', restDone:'خلصت الراحة', restMore:'ريّح كمان', restMoreQ:'عاوز تريّح قد إيه كمان؟', soundL:'صوت نهاية الراحة', sBell:'جرس الحلبة', sBeep:'بيب', sOff:'من غير صوت', soundTest:'جرّب الصوت',
+    rest:'راحة', skip:'تخطّي', restDone:'خلصت الراحة', restMore:'ريّح كمان', restMoreQ:'عاوز تريّح قد إيه كمان؟', soundL:'صوت نهاية الراحة', sBell:'جرس الحلبة', sBeep:'بيب', sOff:'من غير صوت', soundTest:'جرّب الصوت', rsSave:'احفظ للتمرين ده', rsSaved:'اتحفظت الراحة للتمرين ده', rsDef:'الافتراضي', liveGo:'كمّل', rsNow:n=>`العداد الشغال هيتظبط على ${n}`,
     discard:'إلغاء الجلسة', discardQ:'تلغي الجلسة دي؟ كل اللي اتسجل فيها هيتمسح.',
     deleteSession:'امسح الجلسة', deleteSessionQ:'تمسح الجلسة دي من السجل؟',
     emptyFinishQ:'مفيش مجموعات متسجلة. تلغي الجلسة؟',
@@ -806,7 +825,7 @@ const I18N = {
     sessionNote:'Session notes', notePh:'How did it go today?', exNotePh:'Note for this exercise',
     addSet:'+ Set', removeSet:'− Last set', note:'Note', addExercise:'+ Add exercise',
     last:'Last time', noLast:'First time logging this one', plan:'Plan',
-    rest:'Rest', skip:'Skip', restDone:'Rest is over', restMore:'Rest more', restMoreQ:'How much longer do you want to rest?', soundL:'End-of-rest sound', sBell:'Boxing bell', sBeep:'Beep', sOff:'No sound', soundTest:'Test sound',
+    rest:'Rest', skip:'Skip', restDone:'Rest is over', restMore:'Rest more', restMoreQ:'How much longer do you want to rest?', soundL:'End-of-rest sound', sBell:'Boxing bell', sBeep:'Beep', sOff:'No sound', soundTest:'Test sound', rsSave:'Save for this exercise', rsSaved:'Rest saved for this exercise', rsDef:'Default', liveGo:'Resume', rsNow:n=>`The running timer will be set to ${n}`,
     discard:'Discard session', discardQ:'Discard this session? Everything logged in it will be deleted.',
     deleteSession:'Delete session', deleteSessionQ:'Delete this session from your history?',
     emptyFinishQ:'No sets logged. Discard this session?',
@@ -916,7 +935,7 @@ const S = {
   pick: { target:null, q:'', g:null, e:null, open:null },
   measures: new Map(), mDraft: null, histTab: 'sessions',
 };
-const timer = { end:0, total:0, running:false, done:false };
+const timer = { end:0, start:0, total:0, running:false, done:false, exId:null };
 const emptySet = () => ({ w:null, r:null });
 
 function normalizeProfile(p) {
@@ -1341,7 +1360,7 @@ function viewRecords() {
 function exHead(exId, i, count, prefix) {
   const ex = exById(exId);
   return `<div class="ex-head"><div class="ttl"><h3>${esc(exName(ex))}</h3>${exTags(ex)}
-      <div class="ex-meta"><button class="mini acc" data-act="restPick" data-ex="${esc(exId)}">${ICON.clock}${esc(t('restOf', restLabel(restFor(exId))))}</button>
+      <div class="ex-meta"><button class="mini acc" data-act="restEdit" data-ex="${esc(exId)}">${ICON.clock}${esc(t('restOf', restLabel(restFor(exId))))}</button>
       <button class="mini" data-act="howto" data-ex="${esc(exId)}">${ICON.play}${esc(t('video'))}</button></div></div>
     <div class="tools">
       <button class="iconbtn" data-act="${prefix}Up" data-i="${i}" aria-label="${esc(t('up'))}" ${i === 0 ? 'disabled' : ''}>${ICON.up}</button>
@@ -1553,7 +1572,7 @@ function timerBar() {
   if (!timer.running) return '';
   return `<div class="timer" id="timer"><div class="timer-in">
     <div class="grow"><div class="t-lbl">${esc(t('rest'))}</div><div class="bar"><i id="tbar"></i></div></div>
-    <span class="t-time" id="ttime">${mmss((timer.end - Date.now()) / 1000)}</span>
+    <button class="t-time" id="ttime" data-act="restEdit" data-ex="${esc(timer.exId || '')}">${mmss((timer.end - Date.now()) / 1000)}</button>
     <button data-act="tAdj" data-d="-15">−15</button><button data-act="tAdj" data-d="15">+15</button>
     <button data-act="tStop" aria-label="${esc(t('skip'))}">${ICON.x.replace('<svg', '<svg width="18" height="18"')}</button>
   </div></div>`;
@@ -1563,6 +1582,7 @@ function render() {
   const v = S.view;
   const html = v === 'session' ? viewSession() : v === 'routines' ? viewRoutines() : v === 'routineEdit' ? viewRoutineEdit() : v === 'history' ? viewHistory() : v === 'body' ? viewBody() : v === 'exercises' ? viewExercises() : v === 'settings' ? viewSettings() : viewHome();
   $('#app').innerHTML = html + (S.view === 'session' ? timerBar() : navBar());
+  if (S.view !== 'session') placeLive(); else document.body.classList.remove('has-live');
   const first = $('#app .view'); if (first && S.anim) first.classList.add('anim');
   S.anim = false; S.newKey = null;
   setSync(); tick(); autoGrowAll();
@@ -1603,7 +1623,7 @@ function startSession(routine) {
   openSession(s.id);
 }
 function openSession(id) { S.editId = id; go('session'); wake(true); }
-function leaveSession() { swStop(true); const s = cur(); if (s) saveSession(s, 0); S.editId = null; wake(false); go(s && !s.endedAt ? 'home' : (S.prevView || 'home')); }
+function leaveSession() { const s = cur(); const live = s && !s.endedAt; if (!live) swStop(true); if (s) saveSession(s, 0); S.editId = null; if (!live) wake(false); go(live ? 'home' : (S.prevView || 'home')); }
 const cur = () => S.sessions.get(S.editId);
 
 async function finishSession() {
@@ -1631,7 +1651,7 @@ function completeSet(s, i, j) {
   x.done = true; delete x.pr;
   const pr = checkPR(s, it.exId, x);
   if (pr) { x.pr = pr.k; toast(t({ w:'prW', e:'prE', r:'prR', t:'prT' }[pr.k], pr.v)); }
-  if (!s.endedAt) { const rs = restFor(it.exId); if (rs > 0) startTimer(rs); }
+  if (!s.endedAt) { const rs = restFor(it.exId); if (rs > 0) startTimer(rs, it.exId); }
   saveSession(s);
 }
 /* stopwatch for timed sets */
@@ -1678,22 +1698,55 @@ function bell() {
   try { navigator.vibrate && navigator.vibrate([300, 120, 300, 120, 300]); } catch {}
 }
 function restEndSound() { const m = S.profile.sound || 'bell'; if (m === 'bell') bell(); else if (m === 'beep') beep(); else { try { navigator.vibrate && navigator.vibrate([250, 120, 250]); } catch {} } }
-function startTimer(sec) { timer.done = false; timer.total = sec; timer.end = Date.now() + sec * 1000; timer.running = true; if (S.view === 'session') { $('#timer')?.remove(); $('#app').insertAdjacentHTML('beforeend', timerBar()); tick(); } }
-function stopTimer() { timer.running = false; timer.done = false; $('#timer')?.remove(); }
+function startTimer(sec, exId) { timer.done = false; timer.total = sec; timer.start = Date.now(); timer.end = timer.start + sec * 1000; timer.running = true; timer.exId = exId || null; placeLive(); tick(); }
+/* the rest timer / live-session strip: full bar inside a session, compact strip above the tab bar elsewhere */
+function liveStrip() {
+  if (S.view === 'session') return '';
+  if (timer.running || timer.done) return timerBar();
+  const act = activeSession(); if (!act || S.view === 'home') return '';
+  return `<button class="live-pill" id="livePill" data-act="openSession" data-id="${esc(act.id)}"><i></i><span class="grow">${esc(t('activeNow'))} · ${esc(act.routineName || t('freeSession'))}</span><span id="liveEl">${esc(hmm(Date.now() - act.startedAt))}</span><span>${esc(t('liveGo'))}</span></button>`;
+}
+function placeLive() {
+  $('#timer')?.remove(); $('#livePill')?.remove();
+  if (S.view === 'session') $('#app').insertAdjacentHTML('beforeend', timerBar());
+  else { const nav = $('#app .nav'); if (nav) nav.insertAdjacentHTML('afterbegin', liveStrip()); }
+  document.body.classList.toggle('has-live', S.view !== 'session' && !!($('#timer') || $('#livePill')));
+}
+function openRestSheet(exId) {
+  if (!exId) return;
+  const curV = S.profile.rest[exId], def = exById(exId).g === 'stretch' ? 15 : S.profile.restSec;
+  S.rs = { exId, v: curV ?? null, def };
+  const opts = [0, 30, 45, 60, 90, 120, 150, 180, 240, 300];
+  openSheet(t('restTitle', nameOf(exId)), `<span class="muted" style="font-size:13px">${esc(t('restHint'))}</span>
+    <div class="rs-val" id="rsVal"></div><div class="rs-sub" id="rsSub"></div>
+    <div class="rs-step"><button data-act="rsAdj" data-d="-15">−15</button><button data-act="rsAdj" data-d="-5">−5</button><button data-act="rsAdj" data-d="5">+5</button><button data-act="rsAdj" data-d="15">+15</button></div>
+    <div class="chips" id="rsChips"><button class="chip" data-act="rsSet" data-v="">${esc(t('restUseDefault', restLabel(def)))}</button>
+    ${opts.map(o => `<button class="chip" data-act="rsSet" data-v="${o}">${esc(restLabel(o))}</button>`).join('')}</div>
+    <button class="btn primary" data-act="rsSave">${esc(t('rsSave'))}</button>`);
+  rsPaint();
+}
+function rsPaint() {
+  const R = S.rs; if (!R) return; const v = R.v ?? R.def;
+  const el = $('#rsVal'); if (el) el.textContent = v ? mmss(v) : t('restOff');
+  const sub = $('#rsSub'); if (sub) sub.textContent = R.v == null ? t('rsDef') : (timer.running && timer.exId === R.exId ? t('rsNow', v ? mmss(v) : t('restOff')) : '');
+  document.querySelectorAll('#rsChips .chip').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.v === '' ? R.v == null : R.v === +c.dataset.v)));
+}
+function stopTimer() { timer.running = false; timer.done = false; $('#timer')?.remove(); if (S.view !== 'session') placeLive(); }
 function tick() {
   const s = S.view === 'session' ? cur() : null;
   const el = $('#elapsed'); if (el && s && !s.endedAt) el.textContent = hmm(Date.now() - s.startedAt);
+  const le = $('#liveEl'); if (le) { const a = activeSession(); if (a) le.textContent = hmm(Date.now() - a.startedAt); }
+  if (sw.on && sw.target && !sw.beeped && Math.floor((Date.now() - sw.start) / 1000) >= sw.target) { sw.beeped = true; beep(); }
   if (sw.on && s && s.id === sw.sid) {
     const secs = Math.floor((Date.now() - sw.start) / 1000);
     const inp = $(`#r-${sw.i}-${sw.j}`); if (inp && document.activeElement !== inp) inp.value = secs;
-    if (sw.target && secs >= sw.target && !sw.beeped) { sw.beeped = true; beep(); }
   }
   if (!timer.running) return;
   const left = (timer.end - Date.now()) / 1000;
   if (left <= 0) {
     timer.running = false; timer.done = true; restEndSound();
     // keep the bar as a "rest is over" strip with a button to rest a bit more
-    const tEl = $('#timer'); if (tEl) { tEl.outerHTML = timerBar(); const n = $('#timer'); if (n) n.classList.add('ring'); }
+    const tEl = $('#timer'); if (tEl) { tEl.outerHTML = timerBar(); const n = $('#timer'); if (n) n.classList.add('ring'); } else if (S.view !== 'session') placeLive();
     return;
   }
   const tt = $('#ttime'); if (tt) tt.textContent = mmss(left);
@@ -1708,7 +1761,9 @@ async function wake(on) {
     else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
   } catch { wakeLock = null; }
 }
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.view === 'session') wake(true); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && activeSession()) wake(true); });
+/* no pinch / double-tap zoom (it left the app stuck zoomed in on iPhone) */
+['gesturestart','gesturechange'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), { passive:false }));
 
 /* ---------- exercise picker ---------- */
 function openPicker(target, keep) {
@@ -1930,8 +1985,8 @@ document.addEventListener('click', async e => {
     case 'tAdj': timer.end += (+b.dataset.d) * 1000; timer.total = Math.max(timer.total, (timer.end - Date.now()) / 1000); tick(); break;
     case 'tStop': stopTimer(); break;
     case 'restMore': { ensureAudio(); const opts = [15, 30, 45, 60, 90, 120, 180, 300];
-      openSheet(t('restMoreQ'), `<div class="rest-pick">${opts.map(n => `<button data-act="restPick" data-s="${n}">${esc(restLabel(n))}</button>`).join('')}</div>`); break; }
-    case 'restPick': closeSheet(); ensureAudio(); startTimer(+b.dataset.s); break;
+      openSheet(t('restMoreQ'), `<div class="rest-pick">${opts.map(n => `<button data-act="restAgain" data-s="${n}">${esc(restLabel(n))}</button>`).join('')}</div>`); break; }
+    case 'restAgain': closeSheet(); ensureAudio(); startTimer(+b.dataset.s, timer.exId); break;
     case 'setSound': S.profile.sound = b.dataset.v; saveProfile(); render(); ensureAudio(); restEndSound(); break;
     case 'testSound': ensureAudio(); restEndSound(); break;
     case 'sw': ensureAudio(); if (sw.on && sw.sid === s.id && sw.i === i && sw.j === j) swStop(false); else swStart(s, i, j); break;
@@ -1957,18 +2012,15 @@ document.addEventListener('click', async e => {
       if (Object.keys(m).length <= 2) { toast(t('enterOne')); return; }
       saveMeasure(m); S.mDraft = { date:todayISO(), more:D.more }; render(); toast(t('measureSaved')); break; }
     case 'delMeasure': if (await ask(t('delMeasureQ'), t('del'))) { removeMeasure(b.dataset.id); render(); } break;
-    case 'restPick': {
-      const exId = b.dataset.ex, curV = S.profile.rest[exId];
-      const opts = [0, 15, 30, 45, 60, 90, 120, 150, 180, 240];
-      const def = exById(exId).g === 'stretch' ? 15 : S.profile.restSec;
-      openSheet(t('restTitle', nameOf(exId)), `<span class="muted" style="font-size:13px">${esc(t('restHint'))}</span>
-        <div class="chips"><button class="chip" data-act="restSet" data-ex="${esc(exId)}" data-v="" aria-pressed="${curV == null}">${esc(t('restUseDefault', restLabel(def)))}</button>
-        ${opts.map(o => `<button class="chip" data-act="restSet" data-ex="${esc(exId)}" data-v="${o}" aria-pressed="${curV === o}">${esc(restLabel(o))}</button>`).join('')}</div>`);
-      break; }
-    case 'restSet': {
-      const exId = b.dataset.ex;
-      if (b.dataset.v === '') delete S.profile.rest[exId]; else S.profile.rest[exId] = +b.dataset.v;
-      saveProfile(); closeSheet(); render(); break; }
+    case 'restEdit': openRestSheet(b.dataset.ex); break;
+    case 'rsAdj': if (S.rs) { S.rs.v = Math.max(0, Math.min(900, (S.rs.v ?? S.rs.def) + (+b.dataset.d))); rsPaint(); } break;
+    case 'rsSet': if (S.rs) { S.rs.v = b.dataset.v === '' ? null : +b.dataset.v; rsPaint(); } break;
+    case 'rsSave': {
+      const R = S.rs; if (!R) break;
+      if (R.v == null) delete S.profile.rest[R.exId]; else S.profile.rest[R.exId] = R.v;
+      saveProfile();
+      if (timer.running && timer.exId === R.exId) { const nv = restFor(R.exId); timer.total = nv; timer.end = timer.start + nv * 1000; if (nv <= 0) stopTimer(); else tick(); }
+      S.rs = null; closeSheet(); if (S.view === 'session') { const y = window.scrollY; render(); window.scrollTo(0, y); } toast(t('rsSaved')); break; }
     case 'reorderStart': S.reorder = true; render(); break;
     case 'reorderDone': S.reorder = false; render(); break;
     case 'newRoutine': S.routineDraft = { id:newId(), name:'', items:[] }; go('routineEdit'); setTimeout(() => $('#rname')?.focus(), 60); break;
