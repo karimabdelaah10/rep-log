@@ -592,7 +592,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '55';
+const APP_VERSION = '56';
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
 const MKEYS = [['weight','kg'],['waist','cm'],['fat','pct'],['chest','cm'],['arm','cm'],['thigh','cm'],['hips','cm']];
@@ -897,7 +897,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const clone = o => JSON.parse(JSON.stringify(o));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const normNum = s => { s = String(s ?? '').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[٫,]/g, '.').replace(/[^\d.]/g, ''); if (!s) return null; const n = parseFloat(s); return isFinite(n) ? n : null; };
+const normNum = s => { s = String(s ?? '').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٫,]/g, '.').replace(/[^\d.]/g, ''); if (!s) return null; const n = parseFloat(s); return isFinite(n) ? n : null; };
 const fmtW = n => n == null ? '' : (Math.round(n * 100) / 100).toString();
 const fmtInt = n => Math.round(n).toLocaleString('en-US');
 const ICON = {
@@ -2075,6 +2075,15 @@ document.addEventListener('click', async e => {
     case 'importText': { const v = $('#importBox')?.value || ''; if (v.trim()) doImport(v); break; }
   }
 });
+/* number fields: Arabic/Persian digits typed on an Arabic keyboard become 0-9 as you type (and ٫ or , become a decimal point) */
+const toLatinDigits = v => v.replace(/[٠-٩]/g, d => d.charCodeAt(0) - 0x660).replace(/[۰-۹]/g, d => d.charCodeAt(0) - 0x6F0).replace(/[٫,]/g, '.');
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (!el.matches || !el.matches('input[inputmode="decimal"], input[inputmode="numeric"], input[type="number"]')) return;
+  const v = el.value, nv = toLatinDigits(v); if (nv === v) return;
+  let pos = null; try { pos = el.selectionStart; } catch {}
+  el.value = nv; try { if (pos != null) el.setSelectionRange(pos, pos); } catch {}
+}, true);
 document.addEventListener('input', e => {
   const el = e.target, f = el.dataset && el.dataset.f; if (!f) return;
   const s = cur(), d = S.routineDraft;
