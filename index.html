@@ -201,6 +201,8 @@ button.no:hover{background:var(--surface-2)}
 .rest-pick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .rest-pick button{height:52px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow);font-family:var(--f-disp);font-weight:800;font-size:17px}
 .rest-pick button:active{transform:scale(.96)}
+.ritem .tpl-i{color:var(--muted);flex:none;display:inline-flex}
+button.ritem{width:100%;text-align:start}
 .timer button.t-time{background:none;height:auto;min-width:80px;padding:0;font-size:34px}
 .nav .timer{position:static;border-radius:16px;margin:8px 0 2px;padding:0 12px;box-shadow:0 4px 14px rgb(2 132 199 / .25)}
 .nav .timer .timer-in{padding-block:8px}
@@ -308,6 +310,9 @@ html,body{touch-action:manipulation}
 .photo-anim img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .photo-anim img + img{animation:xfade 2.6s ease-in-out infinite}
 @keyframes xfade{0%,30%{opacity:0}45%,80%{opacity:1}95%,100%{opacity:0}}
+.photo-anim.multi img{animation:none;opacity:0;transition:opacity .45s ease-in-out}
+.photo-anim.multi img.on{opacity:1}
+.photo-anim.multi img:first-child{opacity:1}
 .photo-cap{font-size:11px;color:var(--muted);text-align:end;margin-top:-6px}
 .fig{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:6px 10px 10px;display:flex;flex-direction:column;align-items:center;gap:4px}
 .fig svg{width:100%;max-width:300px;height:auto;display:block}
@@ -774,7 +779,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '65';
+const APP_VERSION = '66';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -1099,6 +1104,9 @@ const LEVEL = Object.fromEntries(Object.entries({
 }).flatMap(([lv, ids]) => ids.split(' ').map(id => [id, +lv])));
 Object.assign(LEVEL, {"m_neck_cars": 1, "m_chin_tuck": 1, "m_neck_rot": 1, "m_neck_tilt": 1, "m_shoulder_cars": 1, "m_arm_circles": 1, "m_wall_slide": 1, "m_band_pullapart": 1, "m_stick_passthrough": 2, "m_scap_pushup": 1, "m_scap_pullup": 2, "m_ytw": 2, "m_band_ext_rot": 1, "m_prone_swimmer": 2, "m_floor_slide": 1, "m_reach_roll_lift": 2, "m_thread_needle": 1, "m_open_book": 1, "m_quad_tspine": 1, "m_foam_tspine": 1, "m_seated_tspine": 1, "m_wall_angel": 2, "m_bench_tspine": 2, "m_side_windmill": 1, "m_bretzel": 2, "m_pelvic_tilt": 1, "m_segmental_catcow": 2, "m_jefferson": 3, "m_knee_rocks": 1, "m_hip_hinge": 1, "m_good_morning_bw": 1, "m_scorpion": 2, "m_hip_cars": 2, "m_9090_switch": 2, "m_frog_rock": 2, "m_cossack": 3, "m_deep_squat": 2, "m_hip_airplane": 3, "m_leg_swing_fb": 1, "m_leg_swing_side": 1, "m_fire_hydrant": 1, "m_hip_circles_quad": 1, "m_lunge_rotation": 2, "m_spiderman": 2, "m_shin_box": 3, "m_adductor_rock": 1, "m_hf_reach": 1, "m_inchworm": 2, "m_squat_to_stand": 1, "m_lateral_lunge": 2, "m_hip_ir_lift": 2, "m_walking_knee_hug": 1, "m_walking_quad": 1, "m_toy_soldier": 1, "m_windmill": 2, "m_crab_reach": 2, "m_downdog_cobra": 2, "m_knee_circles": 1, "m_hamstring_floss": 1, "m_knee_wall": 1, "m_ankle_cars": 1, "m_ankle_rocks": 1, "m_tibialis_raise": 1, "m_toe_squat": 2, "m_heel_toe_walk": 1, "m_wrist_cars": 1, "m_wrist_rocks": 1, "m_prayer_wrist": 1, "m_forearm_rot": 1, "m_foam_quads": 1, "m_foam_lats": 1, "m_foam_glutes": 1, "m_foam_calves": 1, "m_foam_it": 2, "m_foam_upperback": 1});
 Object.assign(LEVEL, {"s_levator": 1, "s_upper_trap": 1, "s_scalene": 1, "s_sleeper": 2, "s_towel_ir": 1, "s_wall_pec": 1, "s_puppy": 1, "s_clasp_behind": 1, "s_eagle_arms": 1, "s_bicep_wall": 1, "s_wrist_flex": 1, "s_wrist_ext": 1, "s_corner": 1, "s_prone_pec": 2, "s_knees_chest": 1, "s_happy_baby": 1, "s_sphinx": 1, "s_updog": 2, "s_seated_twist": 1, "s_rag_doll": 1, "s_side_child": 1, "s_hug": 1, "s_ql": 1, "s_lizard": 2, "s_frog": 2, "s_half_splits": 1, "s_lying_glute": 1, "s_standing_fig4": 2, "s_straddle": 2, "s_side_lunge_hold": 1, "s_garland": 2, "s_reclined_butterfly": 1, "s_it_band": 1, "s_chair_piriformis": 1, "s_lying_quad": 1, "s_supine_ham": 1, "s_doorway_ham": 1, "s_head_knee": 1, "s_pyramid": 2, "s_elevated_ham": 1, "s_step_calf": 1, "s_soleus": 1, "s_downdog": 1, "s_plantar": 1, "s_shin": 1, "high_plank": 1, "plank_tap": 2, "plank_updown": 2, "plank_jack": 2, "side_plank_dip": 2, "side_plank_knee": 1, "copenhagen": 3, "bear_hold": 1, "bear_crawl": 2, "reverse_plank": 2, "hollow_rock": 3, "l_sit": 3, "dragon_flag": 3, "toes_to_bar": 3, "windshield": 3, "heel_taps": 1, "toe_touch": 1, "oblique_crunch": 1, "jackknife": 2, "scissor_kicks": 2, "vacuum": 1, "bridge_march": 2, "plank_hip_dip": 2, "cross_mountain": 2, "spiderman_plank": 2, "seated_tuck": 1, "boat_hold": 2, "standing_oblique": 1, "prone_flutter": 2, "db_side_bend": 1, "db_crunch": 2, "suitcase_carry": 1, "kb_windmill": 3, "turkish_getup": 3, "renegade_row": 3, "low_high_chop": 2, "decline_situp": 2, "captain_knee": 1, "ab_machine": 1, "landmine_rot": 2, "hanging_oblique": 3, "m_kneeling_rotation": 1, "m_ankle_alphabet": 1, "m_toe_yoga": 1, "m_thoracic_bridge": 3, "m_hip_hike": 1, "m_gate": 1, "m_arm_swings": 1, "m_torso_twist": 1, "m_shoulder_rolls": 1});
+/* ready-made routines: [exercise, sets, reps or seconds] */
+const TEMPLATES = {"tpl_morning": {"ar": "موبيليتي الصبح", "en": "Morning Mobility", "items": [["m_neck_cars", 1, 5], ["m_shoulder_cars", 1, 5], ["m_segmental_catcow", 1, 6], ["m_thread_needle", 1, 8], ["m_9090_switch", 1, 10], ["m_hip_cars", 1, 5], ["m_deep_squat", 1, 45], ["m_knee_wall", 1, 10], ["m_inchworm", 1, 6], ["m_wrist_cars", 1, 6]], "c": "mob"}, "tpl_desk": {"ar": "بعد المكتب · رقبة وضهر وحوض", "en": "After the Desk · Neck, Back & Hips", "items": [["m_chin_tuck", 1, 10], ["s_upper_trap", 1, 30], ["s_levator", 1, 30], ["m_wall_slide", 1, 10], ["m_open_book", 1, 8], ["s_corner", 1, 30], ["s_hipflexor", 1, 30], ["s_chair_piriformis", 1, 30], ["m_pelvic_tilt", 1, 12], ["s_hug", 1, 30]], "c": "mob"}, "tpl_warm_legs": {"ar": "إحماء قبل الرجل", "en": "Leg Day Warm-up", "items": [["m_leg_swing_fb", 1, 12], ["m_leg_swing_side", 1, 12], ["m_hip_cars", 1, 5], ["m_gate", 1, 8], ["m_spiderman", 1, 6], ["m_knee_wall", 1, 10], ["m_cossack", 1, 6], ["m_deep_squat", 1, 30], ["m_walking_knee_hug", 1, 10]], "c": "mob"}, "tpl_warm_upper": {"ar": "إحماء قبل الصدر والكتف", "en": "Chest & Shoulder Warm-up", "items": [["m_arm_circles", 1, 10], ["m_arm_swings", 1, 15], ["m_shoulder_cars", 1, 5], ["m_band_pullapart", 2, 15], ["m_band_ext_rot", 1, 12], ["m_scap_pushup", 1, 12], ["m_quad_tspine", 1, 8], ["m_wrist_cars", 1, 6]], "c": "mob"}, "tpl_warm_back": {"ar": "إحماء قبل الضهر", "en": "Back Day Warm-up", "items": [["m_shoulder_cars", 1, 5], ["m_ytw", 1, 8], ["m_thread_needle", 1, 8], ["m_band_pullapart", 2, 15], ["m_scap_pullup", 1, 8], ["m_hip_hinge", 1, 10], ["m_good_morning_bw", 1, 12]], "c": "mob"}, "tpl_cooldown": {"ar": "تبريد بعد التمرين · جسم كامل", "en": "Full-Body Cool-down", "items": [["s_child", 1, 45], ["s_downdog", 1, 45], ["s_pigeon", 1, 45], ["s_supine_ham", 1, 45], ["s_lying_quad", 1, 30], ["s_wall_pec", 1, 30], ["s_crossbody", 1, 30], ["s_seated_twist", 1, 30], ["s_knees_chest", 1, 30]], "c": "str"}, "tpl_lowback": {"ar": "ضهر مريح · أسفل الضهر", "en": "Happy Lower Back", "items": [["m_pelvic_tilt", 1, 12], ["m_knee_rocks", 1, 10], ["s_knees_chest", 1, 45], ["m_segmental_catcow", 1, 6], ["s_sphinx", 1, 45], ["s_child", 1, 45], ["s_lying_glute", 1, 30], ["bird_dog", 2, 8], ["dead_bug", 2, 8]], "c": "str"}, "tpl_hips": {"ar": "مرونة الحوض · للسكوات", "en": "Hip Flexibility · Better Squats", "items": [["m_frog_rock", 1, 10], ["s_9090", 1, 45], ["s_pigeon", 1, 45], ["s_lizard", 1, 45], ["s_frog", 1, 60], ["s_butterfly", 1, 45], ["s_garland", 1, 45]], "c": "str"}, "tpl_bedtime": {"ar": "إطالة قبل النوم", "en": "Bedtime Stretch", "items": [["s_reclined_butterfly", 1, 60], ["s_knees_chest", 1, 45], ["s_twist", 1, 45], ["s_supine_ham", 1, 45], ["s_happy_baby", 1, 45], ["s_child", 1, 60], ["s_levator", 1, 30]], "c": "str"}, "tpl_core_beg": {"ar": "بطن مبتدئ · في البيت", "en": "Beginner Abs · Home", "items": [["crunch", 3, 15], ["reverse_crunch", 3, 12], ["heel_taps", 2, 15], ["plank", 3, 30], ["dead_bug", 2, 10], ["bird_dog", 2, 10]], "c": "core"}, "tpl_core_int": {"ar": "بطن وكور متوسط", "en": "Intermediate Core", "items": [["hollow", 3, 30], ["leg_raise", 3, 12], ["bicycle", 3, 20], ["side_plank", 2, 30], ["plank_tap", 3, 10], ["russian_twist", 3, 16], ["mountain", 3, 20]], "c": "core"}, "tpl_core_adv": {"ar": "كور متقدم", "en": "Advanced Core", "items": [["ab_wheel", 3, 10], ["hlr", 3, 10], ["vup", 3, 12], ["hollow_rock", 3, 15], ["copenhagen", 2, 20], ["windshield", 3, 8]], "c": "core"}};
+const tplRoutine = id => { const T = TEMPLATES[id]; return T && { id, name:LANG === 'ar' ? T.ar : T.en, items:T.items.map(([exId, n, v]) => ({ exId, sets:Array.from({ length:n }, () => ({ w:null, r:v })) })) }; };
 /* what you need at home: [] = nothing but the floor; 'gym' = gym only */
 const HOME_KIT = ['dumbbell','kettlebell','band','bench','pullup_bar','barbell','ab_wheel','foam_roller'];
 const NEEDS = {
@@ -1279,7 +1287,7 @@ const I18N = {
     sessionNote:'ملاحظات الجلسة', notePh:'إزاي كان التمرين النهارده؟', exNotePh:'ملاحظة على التمرين ده',
     addSet:'+ مجموعة', removeSet:'− آخر مجموعة', note:'ملاحظة', addExercise:'+ أضف تمرين',
     last:'آخر مرة', noLast:'أول مرة تسجّل التمرين ده', plan:'الهدف',
-    rest:'راحة', skip:'تخطّي', restDone:'خلصت الراحة', restAgo:n=>`من ${n}`, restMore:'ريّح كمان', restMoreQ:'عاوز تريّح قد إيه كمان؟', soundL:'صوت نهاية الراحة', sBell:'جرس الحلبة', sBeep:'بيب', sOff:'من غير صوت', soundTest:'جرّب الصوت', fLevel:'المستوى', lv_1:'مبتدئ', lv_2:'متوسط', lv_3:'متقدم', fHome:'المكان', homeAll:'الجيم والبيت', homeOnly:'ينفع في البيت', homeKitL:'الأدوات اللي عندك في البيت', homeKitHint:'تمارين وزن الجسم بتظهر دايمًا في «ينفع في البيت». علّم على الأدوات اللي عندك علشان تظهر تمارينها كمان.', k_dumbbell:'دمبلز', k_kettlebell:'كيتل بل', k_band:'أستك مقاومة', k_bench:'بنش', k_pullup_bar:'بار عقلة', k_barbell:'بار وأوزان', k_ab_wheel:'عجلة بطن', k_foam_roller:'فوم رولر', g_mobility:'موبيليتي', a_knees:'الركبة', a_ankles:'الكاحل', a_wrists:'الرسغ', atHome:'ينفع في البيت', atHomeNeeds:n=>`ينفع في البيت (محتاج: ${n})`, gymOnly:'جيم بس', homeMissing:n=>`ينفع في البيت لو عندك: ${n}`, rsSave:'احفظ للتمرين ده', rsSaved:'اتحفظت الراحة للتمرين ده', rsDef:'الافتراضي', liveGo:'كمّل', toSession:'افتح التمرين', rsNow:n=>`العداد الشغال هيتظبط على ${n}`,
+    rest:'راحة', skip:'تخطّي', restDone:'خلصت الراحة', restAgo:n=>`من ${n}`, restMore:'ريّح كمان', restMoreQ:'عاوز تريّح قد إيه كمان؟', soundL:'صوت نهاية الراحة', sBell:'جرس الحلبة', sBeep:'بيب', sOff:'من غير صوت', soundTest:'جرّب الصوت', readyR:'روتينات جاهزة', readyHint:'ابدأها على طول، أو انسخها لروتيناتك وعدّل فيها.', tplMob:'إحماء وموبيليتي', tplStr:'إطالات', tplCore:'بطن وكور', tplMin:n=>`حوالي ${n} د`, tplCopy:'انسخ', tplCopied:'اتنسخ — عدّل واحفظ', fLevel:'المستوى', lv_1:'مبتدئ', lv_2:'متوسط', lv_3:'متقدم', fHome:'المكان', homeAll:'الجيم والبيت', homeOnly:'ينفع في البيت', homeKitL:'الأدوات اللي عندك في البيت', homeKitHint:'تمارين وزن الجسم بتظهر دايمًا في «ينفع في البيت». علّم على الأدوات اللي عندك علشان تظهر تمارينها كمان.', k_dumbbell:'دمبلز', k_kettlebell:'كيتل بل', k_band:'أستك مقاومة', k_bench:'بنش', k_pullup_bar:'بار عقلة', k_barbell:'بار وأوزان', k_ab_wheel:'عجلة بطن', k_foam_roller:'فوم رولر', g_mobility:'موبيليتي', a_knees:'الركبة', a_ankles:'الكاحل', a_wrists:'الرسغ', atHome:'ينفع في البيت', atHomeNeeds:n=>`ينفع في البيت (محتاج: ${n})`, gymOnly:'جيم بس', homeMissing:n=>`ينفع في البيت لو عندك: ${n}`, rsSave:'احفظ للتمرين ده', rsSaved:'اتحفظت الراحة للتمرين ده', rsDef:'الافتراضي', liveGo:'كمّل', toSession:'افتح التمرين', rsNow:n=>`العداد الشغال هيتظبط على ${n}`,
     discard:'إلغاء الجلسة', discardQ:'تلغي الجلسة دي؟ كل اللي اتسجل فيها هيتمسح.',
     deleteSession:'امسح الجلسة', deleteSessionQ:'تمسح الجلسة دي من السجل؟',
     emptyFinishQ:'مفيش مجموعات متسجلة. تلغي الجلسة؟',
@@ -1348,7 +1356,7 @@ const I18N = {
     sessionNote:'Session notes', notePh:'How did it go today?', exNotePh:'Note for this exercise',
     addSet:'+ Set', removeSet:'− Last set', note:'Note', addExercise:'+ Add exercise',
     last:'Last time', noLast:'First time logging this one', plan:'Plan',
-    rest:'Rest', skip:'Skip', restDone:'Rest is over', restAgo:n=>`${n} ago`, restMore:'Rest more', restMoreQ:'How much longer do you want to rest?', soundL:'End-of-rest sound', sBell:'Boxing bell', sBeep:'Beep', sOff:'No sound', soundTest:'Test sound', fLevel:'Level', lv_1:'Beginner', lv_2:'Intermediate', lv_3:'Advanced', fHome:'Where', homeAll:'Gym and home', homeOnly:'Doable at home', homeKitL:'Equipment you have at home', homeKitHint:'Bodyweight exercises always show under “Doable at home”. Tick the equipment you own to include their exercises too.', k_dumbbell:'Dumbbells', k_kettlebell:'Kettlebell', k_band:'Resistance band', k_bench:'Bench', k_pullup_bar:'Pull-up bar', k_barbell:'Barbell & plates', k_ab_wheel:'Ab wheel', k_foam_roller:'Foam roller', g_mobility:'Mobility', a_knees:'Knees', a_ankles:'Ankles', a_wrists:'Wrists', atHome:'Doable at home', atHomeNeeds:n=>`Doable at home (needs: ${n})`, gymOnly:'Gym only', homeMissing:n=>`Doable at home if you have: ${n}`, rsSave:'Save for this exercise', rsSaved:'Rest saved for this exercise', rsDef:'Default', liveGo:'Resume', toSession:'Open workout', rsNow:n=>`The running timer will be set to ${n}`,
+    rest:'Rest', skip:'Skip', restDone:'Rest is over', restAgo:n=>`${n} ago`, restMore:'Rest more', restMoreQ:'How much longer do you want to rest?', soundL:'End-of-rest sound', sBell:'Boxing bell', sBeep:'Beep', sOff:'No sound', soundTest:'Test sound', readyR:'Ready-made routines', readyHint:'Start one right away, or copy it to your routines and tweak it.', tplMob:'Warm-ups & mobility', tplStr:'Stretching', tplCore:'Abs & core', tplMin:n=>`~${n} min`, tplCopy:'Copy', tplCopied:'Copied — edit and save', fLevel:'Level', lv_1:'Beginner', lv_2:'Intermediate', lv_3:'Advanced', fHome:'Where', homeAll:'Gym and home', homeOnly:'Doable at home', homeKitL:'Equipment you have at home', homeKitHint:'Bodyweight exercises always show under “Doable at home”. Tick the equipment you own to include their exercises too.', k_dumbbell:'Dumbbells', k_kettlebell:'Kettlebell', k_band:'Resistance band', k_bench:'Bench', k_pullup_bar:'Pull-up bar', k_barbell:'Barbell & plates', k_ab_wheel:'Ab wheel', k_foam_roller:'Foam roller', g_mobility:'Mobility', a_knees:'Knees', a_ankles:'Ankles', a_wrists:'Wrists', atHome:'Doable at home', atHomeNeeds:n=>`Doable at home (needs: ${n})`, gymOnly:'Gym only', homeMissing:n=>`Doable at home if you have: ${n}`, rsSave:'Save for this exercise', rsSaved:'Rest saved for this exercise', rsDef:'Default', liveGo:'Resume', toSession:'Open workout', rsNow:n=>`The running timer will be set to ${n}`,
     discard:'Discard session', discardQ:'Discard this session? Everything logged in it will be deleted.',
     deleteSession:'Delete session', deleteSessionQ:'Delete this session from your history?',
     emptyFinishQ:'No sets logged. Discard this session?',
@@ -1506,10 +1514,22 @@ function exById(id) {
 }
 const exName = ex => ex.name ?? ex[LANG];
 const nameOf = id => exName(exById(id));
-const modeOf = id => { const ex = exById(id); return ex.m || (ex.e === 'bodyweight' ? 'r' : 'wr'); };
+const modeOf = id => { const ex = exById(id); return ex.m || (ex.e === 'bodyweight' || ex.e === 'band' || ['stretch','mobility'].includes(ex.g) ? 'r' : 'wr'); };
 const isBW = id => modeOf(id) !== 'wr';
 const restFor = id => { const v = S.profile.rest[id]; if (v != null) return v; return ['stretch','mobility'].includes(exById(id).g) ? 15 : S.profile.restSec; };
 const restLabel = sec => sec ? (sec >= 60 && sec % 60 === 0 ? `${sec / 60}:00` : sec >= 60 ? mmss(sec) : `${sec}${t('secShort')}`) : t('restOff');
+/* 3+ frame photos (multi-step exercises): show each frame in order, a short pause on the last, then loop */
+let frameTimer = 0;
+function stepFrames(box) {
+  clearInterval(frameTimer); if (!box) return;
+  const imgs = [...box.querySelectorAll('img')]; let k = 0, hold = 0;
+  frameTimer = setInterval(() => {
+    if (!document.body.contains(box)) { clearInterval(frameTimer); return; }
+    if (k === imgs.length - 1 && hold++ < 1) return;
+    hold = 0; k = (k + 1) % imgs.length;
+    imgs.forEach((im, i) => im.classList.toggle('on', i <= k && (i === k || i === 0)));
+  }, 1100);
+}
 function openHowTo(id, fromPicker) {
   const ex = exById(id), G = GUIDE[id], L = LANG === 'ar' ? 0 : 1;
   const body = `${exTags(ex)}
@@ -1522,7 +1542,7 @@ function openHowTo(id, fromPicker) {
   const best = r ? `<div class="guide-tip"><b>${esc(t('yourBest'))}:</b> ${esc(r.md === 'wr' && r.maxW ? `${t('recHeaviest')} ${fmtW(r.maxW)}×${r.maxWr} · ${t('rec1rm')} ${fmtW(half(r.e1))} ${t('kg')}` : r.md === 't' ? `${t('recLongest')} ${r.maxR}${t('secShort')}` : `${t('recMostReps')} ${r.maxR}`)} · ${esc(t('recTimes', r.n))}</div>` : '';
   const ph = PHOTOS[id], gif = EXT_GIFS[id];
   const fig = gif ? `<div class="ext-gif" id="extGif"><img src="${esc(gif)}" alt="${esc(exName(ex))}" onerror="this.parentNode.classList.add('fail')"><a class="btn" href="${esc(gif)}" target="_blank" rel="noopener">${ICON.play.replace('<svg', '<svg width="16" height="16"')}${esc(t('openGif'))}</a></div><div class="photo-cap">Animation: ExerciseDB</div>`
-    : ph ? `<div class="photo-anim" role="img" aria-label="${esc(exName(ex))}" style="aspect-ratio:${ph.w}/${ph.h};max-height:58vh;margin-inline:auto;width:min(100%, calc(58vh * ${ph.w} / ${ph.h}))"><img src="${ph.src[0]}" alt=""><img src="${ph.src[1]}" alt=""></div>${ph.credit ? `<div class="photo-cap">${esc(ph.credit)}</div>` : ''}`
+    : ph ? `<div class="photo-anim ${ph.src.length > 2 ? 'multi' : ''}" role="img" aria-label="${esc(exName(ex))}" style="aspect-ratio:${ph.w}/${ph.h};max-height:58vh;margin-inline:auto;width:min(100%, calc(58vh * ${ph.w} / ${ph.h}))">${ph.src.length > 2 ? ph.src.map((u, k) => `<img src="${u}" alt="" class="${k ? '' : 'on'}">`).join('') : `<img src="${ph.src[0]}" alt=""><img src="${ph.src[1]}" alt="">`}</div>${ph.credit ? `<div class="photo-cap">${esc(ph.credit)}</div>` : ''}`
     : FIGURES[id] ? `<div class="fig"><div id="figBox" aria-label="${esc(exName(ex))}"></div><span class="legend"><i></i>${esc(t('figLegend'))}</span></div>` : '';
   openSheet(exName(ex), fig + body.replace('<div class="guide-links">', best + '<div class="guide-links">'), fromPicker ? el => {
     const on = S.pick.sel.includes(id);
@@ -1532,6 +1552,7 @@ function openHowTo(id, fromPicker) {
     el._onClose = () => openPicker(S.pick.target, true);
   } : null);
   if (!PHOTOS[id] && FIGURES[id]) animateFigure(id);
+  if (PHOTOS[id] && PHOTOS[id].src.length > 2) stepFrames($('.sheet .photo-anim.multi'));
 }
 const FIG_COLORS = { body:'#6B7385', far:'#C3CAD6', accent:'#0284C7', prop:'#1F2433', floor:'#E3E7EF', bg:'#FFFFFF' };
 function animateFigure(id) {
@@ -1963,8 +1984,16 @@ function viewRoutines() {
       <span class="r-ex">${esc(t('exN', r.items.length))} · ${esc(t('setsN', r.items.reduce((a, i) => a + i.sets.length, 0)))}${r.items.length ? ' · ' + esc(r.items.map(i => nameOf(i.exId)).join(SEP())) : ''}</span></button>
       <div class="r-acts"><button class="btn primary sm" data-act="startRoutine" data-id="${esc(r.id)}" ${r.items.length ? '' : 'disabled'}>${esc(t('startR'))}</button><button class="btn sm" data-act="editRoutine" data-id="${esc(r.id)}">${esc(t('edit'))}</button></div></div>`).join('') : `<div class="empty">${esc(t('routinesEmpty'))}</div>`}
     <button class="btn primary block" data-act="newRoutine" ${S.loaded ? '' : 'disabled'}>${esc(t('newRoutine'))}</button>
+    <div class="label" style="margin-top:8px">${esc(t('readyR'))}</div>
+    <span class="muted" style="font-size:13px;margin-top:-10px">${esc(t('readyHint'))}</span>
+    ${[['mob','tplMob'],['str','tplStr'],['core','tplCore']].map(([c, k]) => `<div class="pick-group"><div class="label">${esc(t(k))}</div>${Object.keys(TEMPLATES).filter(id => TEMPLATES[id].c === c).map(id => { const r = tplRoutine(id), home = r.items.every(i => homeAny(exById(i.exId))); return `<div class="r-card tpl"><button class="r-open" data-act="tplView" data-id="${id}"><span class="r-name">${esc(r.name)}</span>
+      <span class="tags"><span class="tag">${esc(t('exN', r.items.length))}</span><span class="tag">${esc(t('tplMin', tplMinutes(r)))}</span>${home ? `<span class="tag home">${ICON.home.replace('<svg', '<svg width="13" height="13"')}${esc(t('atHome'))}</span>` : ''}</span>
+      <span class="r-ex">${esc(r.items.map(i => nameOf(i.exId)).join(SEP()))}</span></button>
+      <div class="r-acts"><button class="btn primary sm" data-act="tplStart" data-id="${id}">${esc(t('startR'))}</button><button class="btn sm" data-act="tplCopy" data-id="${id}">${esc(t('tplCopy'))}</button></div></div>`; }).join('')}</div>`).join('')}
   </div>`;
 }
+/* rough length: work time + rest, both sides for per-side moves are already inside the reps */
+function tplMinutes(r) { let sec = 0; for (const it of r.items) { const md = modeOf(it.exId); for (const x of it.sets) sec += (md === 't' ? x.r * 2 : x.r * 3) + restFor(it.exId); } return Math.max(5, Math.round(sec / 60)); }
 function viewRoutineEdit() {
   const d = S.routineDraft;
   const exists = S.profile.routines.some(r => r.id === d.id);
@@ -2538,6 +2567,10 @@ document.addEventListener('click', async e => {
         <button class="pick-item" data-act="startWith" data-id=""><span class="nm"><b>${esc(t('emptySession'))}</b><br><small>${esc(t('emptySessionHint'))}</small></span>${ICON.chev}</button>`);
       break; }
     case 'startWith': closeSheet(); startRoutine(S.profile.routines.find(r => r.id === b.dataset.id) || null); break;
+    case 'tplStart': { closeSheet(); ensureAudio(); const r = tplRoutine(b.dataset.id); if (r) startRoutine(r); break; }
+    case 'tplCopy': { closeSheet(); const r = tplRoutine(b.dataset.id); if (!r) break; S.routineDraft = { ...clone(r), id:newId() }; go('routineEdit'); toast(t('tplCopied')); break; }
+    case 'tplView': { const r = tplRoutine(b.dataset.id); if (!r) break; openSheet(r.name, `<div class="list">${r.items.map(i => `<button class="ritem" data-act="howto" data-ex="${esc(i.exId)}"><span class="nm">${esc(nameOf(i.exId))}${lvDots(levelOf(exById(i.exId)))}<br><small class="muted">${esc(i.sets.length + ' × ' + (modeOf(i.exId) === 't' ? i.sets[0].r + t('secShort') : i.sets[0].r))}</small></span><span class="tpl-i">${ICON.info.replace('<svg', '<svg width="20" height="20"')}</span></button>`).join('')}</div>
+      <div class="r-acts" style="display:flex;gap:8px"><button class="btn primary" style="flex:1" data-act="tplStart" data-id="${b.dataset.id}">${esc(t('startR'))}</button><button class="btn" style="flex:1" data-act="tplCopy" data-id="${b.dataset.id}">${esc(t('tplCopy'))}</button></div>`); break; }
     case 'startRoutine': { ensureAudio(); const r = S.profile.routines.find(r => r.id === b.dataset.id); if (r) startRoutine(r); break; }
     case 'openSession': ensureAudio(); S.prevView = S.view; openSession(b.dataset.id); break;
     case 'leaveSession': leaveSession(); break;
