@@ -592,7 +592,8 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '56';
+const APP_VERSION = '57';
+const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
 const MKEYS = [['weight','kg'],['waist','cm'],['fat','pct'],['chest','cm'],['arm','cm'],['thigh','cm'],['hips','cm']];
@@ -1552,7 +1553,7 @@ function viewSettings() {
         <textarea class="mono-box" id="importBox" placeholder="${esc(t('pasteImport'))}"></textarea>
         <button class="btn" data-act="importText">${esc(t('importBtn'))}</button>
       </div></section>
-    <p class="hint" style="text-align:center">${esc(t('appName'))} · ${esc(t('versionL', APP_VERSION))}</p>
+    <p class="hint" style="text-align:center">${esc(t('appName'))} · ${esc(t('versionL', `${APP_MAJOR}.${APP_VERSION}`))}</p>
   </div>`;
 }
 
