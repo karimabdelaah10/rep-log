@@ -199,6 +199,9 @@ button.no:hover{background:var(--surface-2)}
 .nav .timer{position:static;border-radius:16px;margin:8px 0 2px;padding:0 12px;box-shadow:0 4px 14px rgb(2 132 199 / .25)}
 .nav .timer .timer-in{padding-block:8px}
 .nav .timer button{flex-direction:row;padding-block:0;font-size:17px;color:inherit;gap:6px;overflow:visible;font-weight:800}
+.nav .timer button.t-go{display:block;text-align:start;height:auto;min-width:0;padding:4px 0;background:none;border-radius:0}
+.nav .timer .t-goto{display:block;font-size:12px;font-weight:700;opacity:.85;font-family:var(--f-body)}
+.nav .timer button.t-go .t-lbl{font-family:var(--f-body);font-size:12px}
 .nav .timer button.t-more{color:var(--sun);font-size:15px}
 .nav .live-pill{flex-direction:row;padding-block:11px;font-size:14px;color:var(--accent);font-weight:800;gap:10px}
 .nav .live-pill #liveEl{font-family:var(--f-disp);font-variant-numeric:tabular-nums}
@@ -588,7 +591,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '53';
+const APP_VERSION = '54';
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
 const MKEYS = [['weight','kg'],['waist','cm'],['fat','pct'],['chest','cm'],['arm','cm'],['thigh','cm'],['hips','cm']];
@@ -757,7 +760,7 @@ const I18N = {
     sessionNote:'ملاحظات الجلسة', notePh:'إزاي كان التمرين النهارده؟', exNotePh:'ملاحظة على التمرين ده',
     addSet:'+ مجموعة', removeSet:'− آخر مجموعة', note:'ملاحظة', addExercise:'+ أضف تمرين',
     last:'آخر مرة', noLast:'أول مرة تسجّل التمرين ده', plan:'الهدف',
-    rest:'راحة', skip:'تخطّي', restDone:'خلصت الراحة', restMore:'ريّح كمان', restMoreQ:'عاوز تريّح قد إيه كمان؟', soundL:'صوت نهاية الراحة', sBell:'جرس الحلبة', sBeep:'بيب', sOff:'من غير صوت', soundTest:'جرّب الصوت', rsSave:'احفظ للتمرين ده', rsSaved:'اتحفظت الراحة للتمرين ده', rsDef:'الافتراضي', liveGo:'كمّل', rsNow:n=>`العداد الشغال هيتظبط على ${n}`,
+    rest:'راحة', skip:'تخطّي', restDone:'خلصت الراحة', restMore:'ريّح كمان', restMoreQ:'عاوز تريّح قد إيه كمان؟', soundL:'صوت نهاية الراحة', sBell:'جرس الحلبة', sBeep:'بيب', sOff:'من غير صوت', soundTest:'جرّب الصوت', rsSave:'احفظ للتمرين ده', rsSaved:'اتحفظت الراحة للتمرين ده', rsDef:'الافتراضي', liveGo:'كمّل', toSession:'افتح التمرين', rsNow:n=>`العداد الشغال هيتظبط على ${n}`,
     discard:'إلغاء الجلسة', discardQ:'تلغي الجلسة دي؟ كل اللي اتسجل فيها هيتمسح.',
     deleteSession:'امسح الجلسة', deleteSessionQ:'تمسح الجلسة دي من السجل؟',
     emptyFinishQ:'مفيش مجموعات متسجلة. تلغي الجلسة؟',
@@ -825,7 +828,7 @@ const I18N = {
     sessionNote:'Session notes', notePh:'How did it go today?', exNotePh:'Note for this exercise',
     addSet:'+ Set', removeSet:'− Last set', note:'Note', addExercise:'+ Add exercise',
     last:'Last time', noLast:'First time logging this one', plan:'Plan',
-    rest:'Rest', skip:'Skip', restDone:'Rest is over', restMore:'Rest more', restMoreQ:'How much longer do you want to rest?', soundL:'End-of-rest sound', sBell:'Boxing bell', sBeep:'Beep', sOff:'No sound', soundTest:'Test sound', rsSave:'Save for this exercise', rsSaved:'Rest saved for this exercise', rsDef:'Default', liveGo:'Resume', rsNow:n=>`The running timer will be set to ${n}`,
+    rest:'Rest', skip:'Skip', restDone:'Rest is over', restMore:'Rest more', restMoreQ:'How much longer do you want to rest?', soundL:'End-of-rest sound', sBell:'Boxing bell', sBeep:'Beep', sOff:'No sound', soundTest:'Test sound', rsSave:'Save for this exercise', rsSaved:'Rest saved for this exercise', rsDef:'Default', liveGo:'Resume', toSession:'Open workout', rsNow:n=>`The running timer will be set to ${n}`,
     discard:'Discard session', discardQ:'Discard this session? Everything logged in it will be deleted.',
     deleteSession:'Delete session', deleteSessionQ:'Delete this session from your history?',
     emptyFinishQ:'No sets logged. Discard this session?',
@@ -1564,14 +1567,17 @@ function navBar() {
   return `<nav class="nav"><div class="nav-in">${items.map(([v, k]) => `<button data-act="nav" data-v="${v}" ${cur === v ? 'aria-current="page"' : ''}><span class="ico">${ICON[v]}</span><span>${esc(t(k))}</span></button>`).join('')}</div></nav>`;
 }
 function timerBar() {
+  const act = S.view !== 'session' ? activeSession() : null;
+  const g0 = act ? `<button class="grow t-go" data-act="openSession" data-id="${esc(act.id)}">` : '<div class="grow">', g1 = act ? '</button>' : '</div>';
+  const go = act ? `<span class="t-goto">${esc(t('toSession'))} ‹</span>` : '';
   if (!timer.running && timer.done) return `<div class="timer done" id="timer"><div class="timer-in">
-    <div class="grow"><div class="t-done">${esc(t('restDone'))}</div></div>
+    ${g0}<div class="t-done">${esc(t('restDone'))}</div>${go}${g1}
     <button class="t-more" data-act="restMore">${ICON.clock.replace('<svg', '<svg width="18" height="18"')}${esc(t('restMore'))}</button>
     <button data-act="tStop" aria-label="${esc(t('skip'))}">${ICON.x.replace('<svg', '<svg width="18" height="18"')}</button>
   </div></div>`;
   if (!timer.running) return '';
   return `<div class="timer" id="timer"><div class="timer-in">
-    <div class="grow"><div class="t-lbl">${esc(t('rest'))}</div><div class="bar"><i id="tbar"></i></div></div>
+    ${g0}<div class="t-lbl">${esc(t('rest'))}${act ? ` · ${esc(t('toSession'))} ‹` : ''}</div><div class="bar"><i id="tbar"></i></div>${g1}
     <button class="t-time" id="ttime" data-act="restEdit" data-ex="${esc(timer.exId || '')}">${mmss((timer.end - Date.now()) / 1000)}</button>
     <button data-act="tAdj" data-d="-15">−15</button><button data-act="tAdj" data-d="15">+15</button>
     <button data-act="tStop" aria-label="${esc(t('skip'))}">${ICON.x.replace('<svg', '<svg width="18" height="18"')}</button>
