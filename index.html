@@ -597,7 +597,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '59';
+const APP_VERSION = '60';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -787,7 +787,8 @@ const I18N = {
     routineNeedsName:'اكتب اسم للروتين الأول', noExercisesYet:'لسه مفيش تمارين في الروتين ده',
     routineSaved:'الروتين اتحفظ', removeThisSet:'شيل المجموعة',
     startR:'ابدأ', edit:'تعديل', startThis:'احفظ وابدأ الروتين', activeExists:'عندك جلسة شغالة، كمّلها الأول',
-    pendingQ:n=>`فيه ${n} مجموعة فيها أرقام بس ما اتعلّمش عليها ✓. تسجّلها ولا تشيلها؟`, logThem:'سجّلها', dropThem:'شيلها',
+    pendingQ:n=>`فيه ${n === 1 ? 'مجموعة واحدة' : n === 2 ? 'مجموعتين' : n + (n <= 10 ? ' مجموعات' : ' مجموعة')} لسه ما اتعلّمش عليها ✓. تكمّلها بالأوزان اللي قبل كده ولا تتجاهلها؟`, logThem:'كمّلها', dropThem:'تجاهلها',
+    routineChangedQ:n=>`غيّرت في تمارين «${n}» أو ترتيبها أو عدد المجموعات. تحفظ التمرين ده بس، ولا تحدّث الروتين بالتغييرات كمان؟`, updateRoutine:'حدّث الروتين', sessionOnly:'التمرين ده بس',
     historyEmpty:'الجلسات اللي تخلّصها هتظهر هنا.',
     language:'اللغة', restDefault:'الراحة الافتراضية (للتمارين اللي مالهاش إعداد خاص)', sec:n=>`${n} ث`,
     myExercises:'تمارين أضفتها', myExercisesEmpty:'التمارين اللي تضيفها بنفسك من شاشة اختيار التمرين هتظهر هنا.',
@@ -855,7 +856,8 @@ const I18N = {
     routineNeedsName:'Give the routine a name first', noExercisesYet:'No exercises in this routine yet',
     routineSaved:'Routine saved', removeThisSet:'Remove set',
     startR:'Start', edit:'Edit', startThis:'Save and start routine', activeExists:'Finish your session in progress first',
-    pendingQ:n=>`${n} sets have numbers but aren’t ticked ✓. Log them or drop them?`, logThem:'Log them', dropThem:'Drop them',
+    pendingQ:n=>`${n} sets aren’t ticked ✓ yet. Complete them with your previous numbers, or ignore them?`, logThem:'Complete them', dropThem:'Ignore them',
+    routineChangedQ:n=>`You changed the exercises, order or set count of “${n}”. Save this workout only, or update the routine too?`, updateRoutine:'Update routine', sessionOnly:'This workout only',
     historyEmpty:'Finished sessions will show up here.',
     language:'Language', restDefault:'Default rest (for exercises without their own)', sec:n=>`${n}s`,
     myExercises:'Exercises you added', myExercisesEmpty:'Exercises you add from the exercise picker show up here.',
@@ -1661,10 +1663,42 @@ const cur = () => S.sessions.get(S.editId);
 async function finishSession() {
   const s = cur(); if (!s) return;
   swStop(true);
-  const pending = s.items.reduce((a, it) => a + it.sets.filter(x => !x.done && x.r != null).length, 0);
+  // 1) sets not ticked yet: ignore them, or complete them with what's typed / the previous numbers
+  const fillOf = (it, j) => {
+    const x = it.sets[j]; if (x.r != null) return { w:x.w, r:x.r };
+    const last = lastFor(it.exId, s.id);
+    const ph = it.plan[j] && (it.plan[j].r != null || it.plan[j].w != null) ? it.plan[j] : last ? (last.sets[j] || last.sets[last.sets.length - 1]) : null;
+    return ph && ph.r != null ? { w:ph.w ?? x.w ?? null, r:ph.r } : null;
+  };
+  const pending = s.items.reduce((a, it) => a + it.sets.filter((x, j) => !x.done && fillOf(it, j)).length, 0);
   let logAll = false;
   if (pending) { const ans = await choose(t('pendingQ', pending), t('logThem'), t('dropThem'), false); if (ans === null) return; logAll = ans === 'ok'; }
-  const cleaned = s.items.map(it => ({ ...it, sets:it.sets.filter(x => x.done || (logAll && x.r != null)) })).filter(it => it.sets.length || it.note);
+  // 2) a routine workout whose exercises / order / set count changed: update the routine too?
+  const rIdx = s.routineId ? S.profile.routines.findIndex(r => r.id === s.routineId) : -1;
+  if (rIdx >= 0) {
+    const r = S.profile.routines[rIdx], sig = items => items.map(i => i.exId + ':' + i.sets.length).join('|');
+    const shape = s.items.map(it => ({ exId:it.exId, sets:it.sets }));
+    if (sig(r.items) !== sig(shape) && shape.length) {
+      const ans = await choose(t('routineChangedQ', r.name), t('updateRoutine'), t('sessionOnly'), false);
+      if (ans === null) return;
+      if (ans === 'ok') {
+        const nr = clone(r);
+        nr.items = shape.map(it => {
+          const old = r.items.find(o => o.exId === it.exId);
+          const base = old ? old.sets : it.sets.map(x => ({ w:x.w ?? null, r:x.r ?? null, ...keepT(x) }));
+          const sets = Array.from({ length:it.sets.length }, (_, j) => clone(base[j] || base[base.length - 1] || { w:null, r:null }));
+          return { exId:it.exId, sets };
+        });
+        S.profile.routines[rIdx] = nr; saveProfile();
+        s.routineName = nr.name;
+      }
+    }
+  }
+  const cleaned = s.items.map(it => ({ ...it, sets:it.sets.map((x, j) => {
+    if (x.done) return x;
+    if (!logAll) return null;
+    const f = fillOf(it, j); return f ? { ...x, w:f.w ?? null, r:f.r } : null;
+  }).filter(Boolean) })).filter(it => it.sets.length || it.note);
   if (!cleaned.length) {
     if (await ask(t('emptyFinishQ'), t('discard'))) { stopTimer(); removeSession(s.id); S.editId = null; wake(false); go('home'); }
     return;
