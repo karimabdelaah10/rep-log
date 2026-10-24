@@ -588,7 +588,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '52';
+const APP_VERSION = '53';
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
 const MKEYS = [['weight','kg'],['waist','cm'],['fat','pct'],['chest','cm'],['arm','cm'],['thigh','cm'],['hips','cm']];
@@ -1703,7 +1703,7 @@ function startTimer(sec, exId) { timer.done = false; timer.total = sec; timer.st
 function liveStrip() {
   if (S.view === 'session') return '';
   if (timer.running || timer.done) return timerBar();
-  const act = activeSession(); if (!act || S.view === 'home') return '';
+  const act = activeSession(); if (!act) return '';
   return `<button class="live-pill" id="livePill" data-act="openSession" data-id="${esc(act.id)}"><i></i><span class="grow">${esc(t('activeNow'))} · ${esc(act.routineName || t('freeSession'))}</span><span id="liveEl">${esc(hmm(Date.now() - act.startedAt))}</span><span>${esc(t('liveGo'))}</span></button>`;
 }
 function placeLive() {
