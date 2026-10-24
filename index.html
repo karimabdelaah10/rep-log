@@ -31,7 +31,7 @@ html,body{overscroll-behavior-y:none}
   color-scheme:light;
   --bg:#F6F7FB; --surface:#FFFFFF; --surface-2:#EEF1F7; --ink:#1F2433; --muted:#6B7385; --line:#E3E7EF;
   --accent:#0284C7; --accent-ink:#FFFFFF; --accent-soft:#E0F2FE;
-  --done:#0284C7; --done-ink:#FFFFFF; --done-soft:#E0F2FE;
+  --done:#0284C7; --done-ink:#FFFFFF; --done-soft:#C9E8FB;
   --danger:#E0483A; --danger-soft:#FFE7E3;
   --sun:#0284C7; --on-sun:#FFFFFF;
   --sky-1:#CFEFFF; --sky-2:#8FD8FB; --sky-ink:#073B57;
@@ -171,7 +171,8 @@ button.no:hover{background:var(--surface-2)}
 .check,.xbtn{width:48px;height:48px;border-radius:13px;background:var(--surface-2);color:var(--muted);display:grid;place-items:center;transition:background .2s,color .2s}
 .check svg{width:22px;height:22px}
 .xbtn svg{width:18px;height:18px}
-.set.done input{background:var(--done-soft)}
+.set.done input{background:var(--done-soft);color:#0B3954}
+.ex.all-done{background:#EAF5FD}
 .set.done .check{background:var(--done);color:var(--done-ink);animation:pop .35s ease}
 .set.done .no{color:var(--done)}
 .ex-actions{display:flex;gap:8px;flex-wrap:wrap}
@@ -591,7 +592,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '54';
+const APP_VERSION = '55';
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
 const MKEYS = [['weight','kg'],['waist','cm'],['fat','pct'],['chest','cm'],['arm','cm'],['thigh','cm'],['hips','cm']];
@@ -1412,7 +1413,8 @@ function exCard(s, it, i) {
     </div>`;
   }).join('');
   const noteOpen = it.note || it._noteOpen;
-  return `<article class="ex">
+  const allDone = it.sets.length > 0 && it.sets.every(x => x.done);
+  return `<article class="ex ${allDone ? 'all-done' : ''}">
     ${exHead(it.exId, i, s.items.length, 'ex')}
     <div class="last">${info.join('<br>')}</div>
     <div class="sets">${setHeader(md)}${rows}</div>
@@ -1569,7 +1571,8 @@ function navBar() {
 function timerBar() {
   const act = S.view !== 'session' ? activeSession() : null;
   const g0 = act ? `<button class="grow t-go" data-act="openSession" data-id="${esc(act.id)}">` : '<div class="grow">', g1 = act ? '</button>' : '</div>';
-  const go = act ? `<span class="t-goto">${esc(t('toSession'))} ‹</span>` : '';
+  const arr = document.documentElement.dir === 'rtl' ? '‹' : '›';
+  const go = act ? `<span class="t-goto">${esc(t('toSession'))} ${arr}</span>` : '';
   if (!timer.running && timer.done) return `<div class="timer done" id="timer"><div class="timer-in">
     ${g0}<div class="t-done">${esc(t('restDone'))}</div>${go}${g1}
     <button class="t-more" data-act="restMore">${ICON.clock.replace('<svg', '<svg width="18" height="18"')}${esc(t('restMore'))}</button>
@@ -1577,7 +1580,7 @@ function timerBar() {
   </div></div>`;
   if (!timer.running) return '';
   return `<div class="timer" id="timer"><div class="timer-in">
-    ${g0}<div class="t-lbl">${esc(t('rest'))}${act ? ` · ${esc(t('toSession'))} ‹` : ''}</div><div class="bar"><i id="tbar"></i></div>${g1}
+    ${g0}<div class="t-lbl">${esc(t('rest'))}${act ? ` · ${esc(t('toSession'))} ${arr}` : ''}</div><div class="bar"><i id="tbar"></i></div>${g1}
     <button class="t-time" id="ttime" data-act="restEdit" data-ex="${esc(timer.exId || '')}">${mmss((timer.end - Date.now()) / 1000)}</button>
     <button data-act="tAdj" data-d="-15">−15</button><button data-act="tAdj" data-d="15">+15</button>
     <button data-act="tStop" aria-label="${esc(t('skip'))}">${ICON.x.replace('<svg', '<svg width="18" height="18"')}</button>
@@ -1682,7 +1685,18 @@ function swStop(silent) {
 }
 /* timer */
 let audioCtx = null;
-function ensureAudio() { try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); } catch {} }
+/* iPhone only lets a page make sound after a tap "unlocks" audio, and it re-locks it whenever the app goes to the background.
+   So every tap re-unlocks it (a silent 1-sample sound), and the bell resumes the context before it plays. */
+function ensureAudio() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state !== 'running') audioCtx.resume().catch(() => {});
+    const src = audioCtx.createBufferSource(); src.buffer = audioCtx.createBuffer(1, 1, 22050); src.connect(audioCtx.destination); src.start(0);
+  } catch {}
+}
+['touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (!audioCtx || audioCtx.state !== 'running') ensureAudio(); }, { capture:true, passive:true }));
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && audioCtx && audioCtx.state !== 'running') audioCtx.resume().catch(() => {}); });
+function withAudio(fn) { try { if (!audioCtx) ensureAudio(); if (!audioCtx) return; if (audioCtx.state === 'running') fn(); else audioCtx.resume().then(fn, () => {}); } catch {} }
 function beep() {
   try { if (!audioCtx) return; const now = audioCtx.currentTime;
     [0, .28, .56].forEach((d, k) => { const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.frequency.value = k === 2 ? 1175 : 880; o.type = 'sine'; g.gain.setValueAtTime(.0001, now + d); g.gain.exponentialRampToValueAtTime(.35, now + d + .02); g.gain.exponentialRampToValueAtTime(.0001, now + d + .22); o.connect(g).connect(audioCtx.destination); o.start(now + d); o.stop(now + d + .25); });
@@ -1692,7 +1706,7 @@ function beep() {
 // Boxing-ring bell: three quick metallic strikes (inharmonic partials with a long ring-out).
 function bell() {
   try { if (!audioCtx) return; const now = audioCtx.currentTime;
-    const out = audioCtx.createGain(); out.gain.value = .5; out.connect(audioCtx.destination);
+    const out = audioCtx.createGain(); out.gain.value = .9; const comp = audioCtx.createDynamicsCompressor(); out.connect(comp).connect(audioCtx.destination);
     const partials = [[1, 1], [2.32, .55], [4.25, .35], [6.8, .18], [9.4, .08]];
     [0, .32, .64].forEach(d => partials.forEach(([r, a]) => {
       const o = audioCtx.createOscillator(), g = audioCtx.createGain(), dec = 1.9 / Math.sqrt(r);
@@ -1703,7 +1717,7 @@ function bell() {
   } catch {}
   try { navigator.vibrate && navigator.vibrate([300, 120, 300, 120, 300]); } catch {}
 }
-function restEndSound() { const m = S.profile.sound || 'bell'; if (m === 'bell') bell(); else if (m === 'beep') beep(); else { try { navigator.vibrate && navigator.vibrate([250, 120, 250]); } catch {} } }
+function restEndSound() { const m = S.profile.sound || 'bell'; if (m === 'bell') withAudio(bell); else if (m === 'beep') withAudio(beep); else { try { navigator.vibrate && navigator.vibrate([250, 120, 250]); } catch {} } }
 function startTimer(sec, exId) { timer.done = false; timer.total = sec; timer.start = Date.now(); timer.end = timer.start + sec * 1000; timer.running = true; timer.exId = exId || null; placeLive(); tick(); }
 /* the rest timer / live-session strip: full bar inside a session, compact strip above the tab bar elsewhere */
 function liveStrip() {
@@ -1965,6 +1979,7 @@ document.addEventListener('click', async e => {
       } else { x.done = false; delete x.pr; saveSession(s); }
       const row = b.closest('.set'); row.classList.toggle('done', x.done); row.classList.toggle('pr', !!x.pr); b.setAttribute('aria-pressed', x.done); b.innerHTML = x.pr ? ICON.trophy : ICON.check;
       if (wIn) wIn.value = fmtW(x.w); if (rIn) rIn.value = x.r ?? '';
+      b.closest('.ex')?.classList.toggle('all-done', it.sets.every(y => y.done));
       break; }
     case 'addSet': { const sets = s.items[i].sets; const prev = sets[sets.length - 1]; sets.push({ w:prev ? prev.w : null, r:prev ? prev.r : null, done:false }); S.newKey = `${i}-${sets.length - 1}`; saveSession(s); render(); break; }
     case 'removeSet': swStop(true); s.items[i].sets.pop(); saveSession(s); render(); break;
