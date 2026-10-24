@@ -190,6 +190,11 @@ button.no:hover{background:var(--surface-2)}
 .timer .bar i{display:block;height:100%;background:var(--on-sun);width:0;border-radius:3px;transition:width .25s linear}
 .timer button{height:40px;min-width:46px;padding-inline:10px;border-radius:12px;background:rgb(255 255 255 / .2);font-weight:800;font-family:var(--f-disp);font-size:17px;display:grid;place-items:center}
 .timer.ring{animation:ring .25s 6}
+.timer .t-done{font-family:var(--f-disp);font-size:20px;font-weight:800}
+.timer button.t-more{display:flex;gap:6px;align-items:center;font-size:15px;padding-inline:14px;background:var(--on-sun);color:var(--sun)}
+.rest-pick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.rest-pick button{height:52px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow);font-family:var(--f-disp);font-weight:800;font-size:17px}
+.rest-pick button:active{transform:scale(.96)}
 
 /* routines */
 .r-card{background:var(--surface);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
@@ -564,7 +569,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '50';
+const APP_VERSION = '51';
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
 const MKEYS = [['weight','kg'],['waist','cm'],['fat','pct'],['chest','cm'],['arm','cm'],['thigh','cm'],['hips','cm']];
@@ -733,7 +738,7 @@ const I18N = {
     sessionNote:'ملاحظات الجلسة', notePh:'إزاي كان التمرين النهارده؟', exNotePh:'ملاحظة على التمرين ده',
     addSet:'+ مجموعة', removeSet:'− آخر مجموعة', note:'ملاحظة', addExercise:'+ أضف تمرين',
     last:'آخر مرة', noLast:'أول مرة تسجّل التمرين ده', plan:'الهدف',
-    rest:'راحة', skip:'تخطّي',
+    rest:'راحة', skip:'تخطّي', restDone:'خلصت الراحة', restMore:'ريّح كمان', restMoreQ:'عاوز تريّح قد إيه كمان؟', soundL:'صوت نهاية الراحة', sBell:'جرس الحلبة', sBeep:'بيب', sOff:'من غير صوت', soundTest:'جرّب الصوت',
     discard:'إلغاء الجلسة', discardQ:'تلغي الجلسة دي؟ كل اللي اتسجل فيها هيتمسح.',
     deleteSession:'امسح الجلسة', deleteSessionQ:'تمسح الجلسة دي من السجل؟',
     emptyFinishQ:'مفيش مجموعات متسجلة. تلغي الجلسة؟',
@@ -801,7 +806,7 @@ const I18N = {
     sessionNote:'Session notes', notePh:'How did it go today?', exNotePh:'Note for this exercise',
     addSet:'+ Set', removeSet:'− Last set', note:'Note', addExercise:'+ Add exercise',
     last:'Last time', noLast:'First time logging this one', plan:'Plan',
-    rest:'Rest', skip:'Skip',
+    rest:'Rest', skip:'Skip', restDone:'Rest is over', restMore:'Rest more', restMoreQ:'How much longer do you want to rest?', soundL:'End-of-rest sound', sBell:'Boxing bell', sBeep:'Beep', sOff:'No sound', soundTest:'Test sound',
     discard:'Discard session', discardQ:'Discard this session? Everything logged in it will be deleted.',
     deleteSession:'Delete session', deleteSessionQ:'Delete this session from your history?',
     emptyFinishQ:'No sets logged. Discard this session?',
@@ -895,7 +900,7 @@ const ICON = {
 };
 
 /* ---------- state ---------- */
-const defaultProfile = () => ({ lang:'ar', restSec:90, rest:{}, custom:[], routines:[] });
+const defaultProfile = () => ({ lang:'ar', restSec:90, sound:'bell', rest:{}, custom:[], routines:[] });
 const S = {
   profile: defaultProfile(),
   sessions: new Map(),
@@ -911,7 +916,7 @@ const S = {
   pick: { target:null, q:'', g:null, e:null, open:null },
   measures: new Map(), mDraft: null, histTab: 'sessions',
 };
-const timer = { end:0, total:0, running:false };
+const timer = { end:0, total:0, running:false, done:false };
 const emptySet = () => ({ w:null, r:null });
 
 function normalizeProfile(p) {
@@ -920,6 +925,7 @@ function normalizeProfile(p) {
   return {
     lang: p.lang === 'en' ? 'en' : 'ar',
     restSec: Number(p.restSec) > 0 ? Number(p.restSec) : d.restSec,
+    sound: ['bell','beep','off'].includes(p.sound) ? p.sound : d.sound,
     rest: p.rest && typeof p.rest === 'object' ? Object.fromEntries(Object.entries(p.rest).filter(([, v]) => Number(v) >= 0).map(([k, v]) => [k, Number(v)])) : {},
     custom: Array.isArray(p.custom) ? p.custom.filter(x => x && x.id && x.name).map(x => ({ id:x.id, g:GROUPS.includes(x.g) ? x.g : 'other', e:EQUIP.includes(x.e) ? x.e : 'other', ...(MODES.includes(x.m) ? { m:x.m } : {}), name:String(x.name), ...(x.hidden ? { hidden:true } : {}) })) : [],
     routines: Array.isArray(p.routines) ? p.routines.filter(r => r && r.id).map(r => ({
@@ -1508,6 +1514,8 @@ function viewSettings() {
       <div class="seg"><button data-act="setLang" data-v="ar" aria-pressed="${LANG === 'ar'}">عربي</button><button data-act="setLang" data-v="en" aria-pressed="${LANG === 'en'}">English</button></div></section>
     <section class="section"><div class="label">${esc(t('restDefault'))}</div>
       <div class="seg">${rest.map(n => `<button data-act="setRest" data-v="${n}" aria-pressed="${S.profile.restSec === n}">${esc(t('sec', n))}</button>`).join('')}</div></section>
+    <section class="section"><div class="label">${esc(t('soundL'))}</div>
+      <div class="seg">${[['bell','sBell'],['beep','sBeep'],['off','sOff']].map(([v, k]) => `<button data-act="setSound" data-v="${v}" aria-pressed="${(S.profile.sound || 'bell') === v}">${esc(t(k))}</button>`).join('')}</div></section>
     <section class="section"><div class="label">${esc(t('myExercises'))}</div>
       ${customs.length ? `<div class="list">${customs.map(c => `<div class="ritem"><span class="nm">${esc(c.name)}<br>${exTags(c)}</span><button class="iconbtn" data-act="delCustom" data-id="${esc(c.id)}" aria-label="${esc(t('remove'))}">${ICON.x}</button></div>`).join('')}</div>` : `<div class="empty">${esc(t('myExercisesEmpty'))}</div>`}</section>
     <section class="section"><div class="label">${esc(t('backup'))}</div>
@@ -1537,6 +1545,11 @@ function navBar() {
   return `<nav class="nav"><div class="nav-in">${items.map(([v, k]) => `<button data-act="nav" data-v="${v}" ${cur === v ? 'aria-current="page"' : ''}><span class="ico">${ICON[v]}</span><span>${esc(t(k))}</span></button>`).join('')}</div></nav>`;
 }
 function timerBar() {
+  if (!timer.running && timer.done) return `<div class="timer done" id="timer"><div class="timer-in">
+    <div class="grow"><div class="t-done">${esc(t('restDone'))}</div></div>
+    <button class="t-more" data-act="restMore">${ICON.clock.replace('<svg', '<svg width="18" height="18"')}${esc(t('restMore'))}</button>
+    <button data-act="tStop" aria-label="${esc(t('skip'))}">${ICON.x.replace('<svg', '<svg width="18" height="18"')}</button>
+  </div></div>`;
   if (!timer.running) return '';
   return `<div class="timer" id="timer"><div class="timer-in">
     <div class="grow"><div class="t-lbl">${esc(t('rest'))}</div><div class="bar"><i id="tbar"></i></div></div>
@@ -1650,8 +1663,23 @@ function beep() {
   } catch {}
   try { navigator.vibrate && navigator.vibrate([250, 120, 250]); } catch {}
 }
-function startTimer(sec) { timer.total = sec; timer.end = Date.now() + sec * 1000; timer.running = true; if (S.view === 'session') { $('#timer')?.remove(); $('#app').insertAdjacentHTML('beforeend', timerBar()); tick(); } }
-function stopTimer() { timer.running = false; $('#timer')?.remove(); }
+// Boxing-ring bell: three quick metallic strikes (inharmonic partials with a long ring-out).
+function bell() {
+  try { if (!audioCtx) return; const now = audioCtx.currentTime;
+    const out = audioCtx.createGain(); out.gain.value = .5; out.connect(audioCtx.destination);
+    const partials = [[1, 1], [2.32, .55], [4.25, .35], [6.8, .18], [9.4, .08]];
+    [0, .32, .64].forEach(d => partials.forEach(([r, a]) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain(), dec = 1.9 / Math.sqrt(r);
+      o.type = 'sine'; o.frequency.value = 690 * r;
+      g.gain.setValueAtTime(.0001, now + d); g.gain.exponentialRampToValueAtTime(a, now + d + .003); g.gain.exponentialRampToValueAtTime(.0001, now + d + dec);
+      o.connect(g).connect(out); o.start(now + d); o.stop(now + d + dec + .05);
+    }));
+  } catch {}
+  try { navigator.vibrate && navigator.vibrate([300, 120, 300, 120, 300]); } catch {}
+}
+function restEndSound() { const m = S.profile.sound || 'bell'; if (m === 'bell') bell(); else if (m === 'beep') beep(); else { try { navigator.vibrate && navigator.vibrate([250, 120, 250]); } catch {} } }
+function startTimer(sec) { timer.done = false; timer.total = sec; timer.end = Date.now() + sec * 1000; timer.running = true; if (S.view === 'session') { $('#timer')?.remove(); $('#app').insertAdjacentHTML('beforeend', timerBar()); tick(); } }
+function stopTimer() { timer.running = false; timer.done = false; $('#timer')?.remove(); }
 function tick() {
   const s = S.view === 'session' ? cur() : null;
   const el = $('#elapsed'); if (el && s && !s.endedAt) el.textContent = hmm(Date.now() - s.startedAt);
@@ -1663,8 +1691,9 @@ function tick() {
   if (!timer.running) return;
   const left = (timer.end - Date.now()) / 1000;
   if (left <= 0) {
-    timer.running = false; beep();
-    const tEl = $('#timer'); if (tEl) { tEl.classList.add('ring'); const tt = $('#ttime'); if (tt) tt.textContent = '0:00'; setTimeout(() => { if (!timer.running) tEl.remove(); }, 2000); }
+    timer.running = false; timer.done = true; restEndSound();
+    // keep the bar as a "rest is over" strip with a button to rest a bit more
+    const tEl = $('#timer'); if (tEl) { tEl.outerHTML = timerBar(); const n = $('#timer'); if (n) n.classList.add('ring'); }
     return;
   }
   const tt = $('#ttime'); if (tt) tt.textContent = mmss(left);
@@ -1900,6 +1929,11 @@ document.addEventListener('click', async e => {
       break; }
     case 'tAdj': timer.end += (+b.dataset.d) * 1000; timer.total = Math.max(timer.total, (timer.end - Date.now()) / 1000); tick(); break;
     case 'tStop': stopTimer(); break;
+    case 'restMore': { ensureAudio(); const opts = [15, 30, 45, 60, 90, 120, 180, 300];
+      openSheet(t('restMoreQ'), `<div class="rest-pick">${opts.map(n => `<button data-act="restPick" data-s="${n}">${esc(restLabel(n))}</button>`).join('')}</div>`); break; }
+    case 'restPick': closeSheet(); ensureAudio(); startTimer(+b.dataset.s); break;
+    case 'setSound': S.profile.sound = b.dataset.v; saveProfile(); render(); ensureAudio(); restEndSound(); break;
+    case 'testSound': ensureAudio(); restEndSound(); break;
     case 'sw': ensureAudio(); if (sw.on && sw.sid === s.id && sw.i === i && sw.j === j) swStop(false); else swStart(s, i, j); break;
     case 'setType': case 'rSetType': {
       const x = (a === 'setType' ? s.items[i] : d.items[i]).sets[j];
