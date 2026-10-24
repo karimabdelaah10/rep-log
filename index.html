@@ -61,6 +61,10 @@ button:disabled{cursor:default;opacity:.4}
 .view.swiping{box-shadow:-10px 0 28px rgb(31 36 51 / .14);background:var(--bg);position:relative;z-index:5}
 .view.back-in{animation:backIn .34s cubic-bezier(.32,.72,0,1)}
 body.edge-drag{overflow:hidden;user-select:none;-webkit-user-select:none}
+.view.swiping{position:relative;z-index:1;box-shadow:0 0 0 300vmax var(--bg)}
+#underlay{position:fixed;inset:0;z-index:0;background:var(--bg);overflow:hidden;pointer-events:none;will-change:transform}
+#underlay .ul-in{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+#underlay .ul-dim{position:absolute;inset:0;background:#000;opacity:.12;z-index:9}
 .sheet{touch-action:pan-y}
 html,body{overscroll-behavior-x:none}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -592,7 +596,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '57';
+const APP_VERSION = '58';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -1588,9 +1592,26 @@ function timerBar() {
   </div></div>`;
 }
 
+function viewHTML(v) { return v === 'session' ? viewSession() : v === 'routines' ? viewRoutines() : v === 'routineEdit' ? viewRoutineEdit() : v === 'history' ? viewHistory() : v === 'body' ? viewBody() : v === 'exercises' ? viewExercises() : v === 'settings' ? viewSettings() : viewHome(); }
+/* where a back gesture lands, so that page can be drawn underneath while you swipe */
+function backTarget() {
+  if (S.reorder) return null;
+  if (S.view === 'session') { const s = cur(); return s && !s.endedAt ? 'home' : (S.prevView || 'home'); }
+  if (S.view === 'routineEdit') return 'routines';
+  return S.view !== 'home' ? 'home' : null;
+}
+function mountUnderlay(view) {
+  $('#underlay')?.remove(); if (!view) return null;
+  const sv = S.view, sa = S.anim; let html = '', nav = '';
+  try { S.view = view; S.anim = false; html = viewHTML(view); nav = view === 'session' ? '' : navBar(); } catch { html = ''; } finally { S.view = sv; S.anim = sa; }
+  const u = document.createElement('div'); u.id = 'underlay'; u.setAttribute('aria-hidden', 'true');
+  u.innerHTML = `<div class="ul-in">${html.replace(/\sid="[^"]*"/g, '')}</div>${nav}<div class="ul-dim"></div>`;
+  u.querySelectorAll('.view').forEach(v => v.classList.remove('anim', 'back-in'));
+  document.body.appendChild(u); return u;
+}
 function render() {
   const v = S.view;
-  const html = v === 'session' ? viewSession() : v === 'routines' ? viewRoutines() : v === 'routineEdit' ? viewRoutineEdit() : v === 'history' ? viewHistory() : v === 'body' ? viewBody() : v === 'exercises' ? viewExercises() : v === 'settings' ? viewSettings() : viewHome();
+  const html = viewHTML(v);
   $('#app').innerHTML = html + (S.view === 'session' ? timerBar() : navBar());
   if (S.view !== 'session') placeLive(); else document.body.classList.remove('has-live');
   const first = $('#app .view'); if (first && S.anim) first.classList.add('anim');
@@ -2133,6 +2154,8 @@ document.addEventListener('touchmove', e => {
     eb.on = true; eb.x0 = tc.clientX;
     lp.on = false; clearTimeout(lp.t); lpc.on = false; clearTimeout(lpc.t);
     eb.el.classList.remove('anim', 'back-in'); eb.el.classList.add('swiping'); eb.el.style.transition = 'none';
+    const lft = eb.el.getBoundingClientRect().left; eb.el.style.clipPath = `inset(-300vh -300vw -300vh -${Math.ceil(lft)}px)`;
+    eb.ul = mountUnderlay(backTarget()); if (eb.ul) { eb.ul.style.transform = 'translateX(-30%)'; }
     document.body.classList.add('edge-drag');
   }
   e.preventDefault();
@@ -2140,17 +2163,21 @@ document.addEventListener('touchmove', e => {
   const dt = e.timeStamp - eb.lt; if (dt > 0) eb.vel = .7 * eb.vel + .3 * ((tc.clientX - eb.lx) / dt);
   eb.lx = tc.clientX; eb.lt = e.timeStamp;
   eb.el.style.transform = `translateX(${eb.dx}px)`;
+  if (eb.ul) { const pr = Math.min(1, eb.dx / window.innerWidth); eb.ul.style.transform = `translateX(${-30 * (1 - pr)}%)`; const dm = eb.ul.lastChild; if (dm) dm.style.opacity = (.12 * (1 - pr)).toFixed(3); }
 }, { passive:false });
 function endEdge() {
   if (!eb.on) { eb.track = false; return; }
-  const el = eb.el, act = eb.act, go_ = eb.dx > window.innerWidth * .33 || (eb.vel > .45 && eb.dx > 30);
-  eb.on = eb.track = false;
-  const clean = () => { el.classList.remove('swiping'); el.style.transform = ''; el.style.transition = ''; document.body.classList.remove('edge-drag'); };
-  if (!go_) { el.style.transition = `transform .3s ${IOS_EASE}`; el.style.transform = ''; setTimeout(clean, 300); return; }
-  el.style.transition = `transform .24s ${IOS_EASE}`; el.style.transform = 'translateX(100%)';
+  const el = eb.el, act = eb.act, ul = eb.ul, go_ = eb.dx > window.innerWidth * .33 || (eb.vel > .45 && eb.dx > 30);
+  eb.on = eb.track = false; eb.ul = null;
+  const clean = () => { el.classList.remove('swiping'); el.style.transform = ''; el.style.transition = ''; el.style.clipPath = ''; document.body.classList.remove('edge-drag'); };
+  const ulTo = (x, dim, ms) => { if (!ul) return; ul.style.transition = `transform ${ms}ms ${IOS_EASE}`; ul.style.transform = `translateX(${x}%)`; const dm = ul.lastChild; if (dm) { dm.style.transition = `opacity ${ms}ms`; dm.style.opacity = dim; } };
+  if (!go_) { el.style.transition = `transform .3s ${IOS_EASE}`; el.style.transform = ''; ulTo(-30, .12, 300); setTimeout(() => { clean(); ul?.remove(); }, 300); return; }
+  el.style.transition = `transform .24s ${IOS_EASE}`; el.style.transform = 'translateX(100%)'; ulTo(0, 0, 240);
   setTimeout(() => {
-    clean(); act();
-    const nv = $('#app .view'); if (nv && !reduceMotion()) { nv.classList.remove('anim'); nv.classList.add('back-in'); setTimeout(() => nv.classList.remove('back-in'), 360); }
+    clean(); act(); window.scrollTo(0, 0);
+    const nv = $('#app .view'); if (nv) nv.classList.remove('anim', 'back-in');
+    requestAnimationFrame(() => ul?.remove());
+    if (!ul) { const v2 = $('#app .view'); if (v2 && !reduceMotion()) { v2.classList.add('back-in'); setTimeout(() => v2.classList.remove('back-in'), 360); } }
   }, 230);
 }
 document.addEventListener('touchend', endEdge); document.addEventListener('touchcancel', endEdge);
