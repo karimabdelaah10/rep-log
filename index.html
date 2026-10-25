@@ -362,7 +362,9 @@ a.btn{text-decoration:none}
 .ir-bad.on{border-color:#E5383B;color:#E5383B;background:color-mix(in srgb,#E5383B 10%,transparent)}
 .ir-bad.on .vb{filter:none;opacity:1}
 .img-legend{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:12px;color:var(--muted);margin:2px 2px 10px}
-.img-legend span{display:inline-flex;align-items:center;gap:4px}
+.img-legend .lg{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:999px;border:1.5px solid transparent;background:var(--surface);box-shadow:var(--shadow);color:var(--muted);font-size:12px;font-weight:700}
+.img-legend .lg.on{border-color:var(--accent, #0284C7);color:var(--ink, inherit)}
+.img-legend .lg .vbadge{margin:0}
 .pick-item small{color:var(--muted);display:inline-flex;align-items:center;gap:4px}
 .pick-item small .hm{color:var(--accent);display:inline-flex}
 .lv{display:inline-flex;gap:2px;margin-inline-start:6px;vertical-align:middle}
@@ -850,7 +852,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '82';
+const APP_VERSION = '83';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -2583,7 +2585,7 @@ function fillPicker() {
     + `<button class="fbtn ${P.home ? 'on' : ''}" data-act="fHome" aria-pressed="${!!P.home}"><span class="txt"><span class="fl">${esc(t('fHome'))}</span><span class="fv">${esc(t(P.home ? 'homeOnly' : 'homeAll'))}</span></span><span class="car">${ICON.home.replace('<svg', '<svg width="18" height="18"')}</span></button>`
     + `<button class="fbtn ${P.cali ? 'on' : ''}" data-act="fCali" aria-pressed="${!!P.cali}" style="grid-column:1/-1"><span class="txt"><span class="fl">${esc(t('fCali'))}</span><span class="fv">${esc(t(P.cali ? 'caliOnly' : 'caliAll'))}</span></span><span class="car">${ICON.cali}</span></button>`
     + (['stretch','mobility'].includes(P.g) ? fb('a', t('fArea'), P.a) : '')
-    + (P.target === 'library' ? `<div class="img-legend" style="grid-column:1/-1">${esc(t('imgLegend'))}<span><span class="vbadge st-done">${ICON.verified}</span>${esc(t('lg_done'))}</span><span><span class="vbadge st-ok">${ICON.verified}</span>${esc(t('lg_ok'))}</span><span><span class="vbadge st-bad">${ICON.rejected}</span>${esc(t('lg_bad'))}</span></div>` : '');
+    + (P.target === 'library' ? `<div class="img-legend" style="grid-column:1/-1">${esc(t('imgLegend'))}${[['done', ICON.verified], ['ok', ICON.verified], ['bad', ICON.rejected]].map(([k, ic]) => `<button class="lg ${P.img === k ? 'on' : ''}" data-act="fImg" data-v="${k}" aria-pressed="${P.img === k}"><span class="vbadge st-${k}">${ic}</span>${esc(t('lg_' + k))}</button>`).join('')}</div>` : '');
   const panel = $('#pickPanel');
   if (P.open) {
     const opts = P.open === 'g' ? GROUPS : P.open === 'e' ? EQUIP : P.open === 'l' ? LEVELS : AREAS;
@@ -2602,7 +2604,7 @@ function fillPicker() {
     return multi ? `<div class="pick-row ${sel.includes(ex.id) ? 'sel' : ''}" data-id="${esc(ex.id)}">${btn}<button class="pick-info" data-act="pickInfo" data-id="${esc(ex.id)}" aria-label="${esc(t('details'))}">${ICON.info}</button></div>` : btn;
   };
   const textOk = ex => !query || [ex.ar, ex.en, ex.name].some(n => n && n.toLowerCase().includes(query));
-  const match = ex => textOk(ex) && (!P.g || ex.g === P.g) && (!P.e || ex.e === P.e) && (!P.a || areasOf(ex.id).includes(P.a)) && (!P.l || levelOf(ex) === +P.l) && (!P.home || homeOk(ex)) && (!P.cali || caliOf(ex));
+  const match = ex => textOk(ex) && (!P.g || ex.g === P.g) && (!P.e || ex.e === P.e) && (!P.a || areasOf(ex.id).includes(P.a)) && (!P.l || levelOf(ex) === +P.l) && (!P.home || homeOk(ex)) && (!P.cali || caliOf(ex)) && (!P.img || imgState(ex.id) === P.img);
   let html = '';
   if (query && !all.some(ex => [ex.ar, ex.en, ex.name].some(n => n && n.toLowerCase() === query))) {
     html += `<div class="add-custom">
@@ -2620,7 +2622,7 @@ function fillPicker() {
   }
   // stretches that suit the chosen muscle group
   if (P.g && AREA_GROUP && !['stretch','mobility','core','other'].includes(P.g)) {
-    const rel = abc(all.filter(ex => ex.g === 'stretch' && textOk(ex) && (!P.e || ex.e === P.e) && (!P.l || levelOf(ex) === +P.l) && (!P.home || homeOk(ex)) && (!P.cali || caliOf(ex)) && areasOf(ex.id).some(a => AREA_GROUP[a] === P.g)));
+    const rel = abc(all.filter(ex => ex.g === 'stretch' && textOk(ex) && (!P.e || ex.e === P.e) && (!P.l || levelOf(ex) === +P.l) && (!P.home || homeOk(ex)) && (!P.cali || caliOf(ex)) && (!P.img || imgState(ex.id) === P.img) && areasOf(ex.id).some(a => AREA_GROUP[a] === P.g)));
     if (rel.length) { any = true; html += `<div class="pick-group"><div class="label">${esc(t('stretchesFor', t('g_' + P.g)))}</div>${rel.map(ex => item(ex, areasOf(ex.id).map(a => t('a_' + a)).join(SEP()))).join('')}</div>`; }
   }
   if (!any && !query) html += `<div class="empty">${esc(t('noMatch'))}</div>`;
@@ -2766,6 +2768,7 @@ document.addEventListener('click', async e => {
     case 'kitToggle': { const k = b.dataset.v, kit = new Set(homeKit()); kit.has(k) ? kit.delete(k) : kit.add(k); S.profile.homeKit = HOME_KIT.filter(x => kit.has(x)); saveProfile(); b.setAttribute('aria-pressed', String(kit.has(k))); break; }
     case 'fHome': S.pick.home = !S.pick.home; S.pick.open = null; fillPicker(); break;
     case 'fCali': S.pick.cali = !S.pick.cali; S.pick.open = null; fillPicker(); break;
+    case 'fImg': S.pick.img = S.pick.img === b.dataset.v ? null : b.dataset.v; S.pick.open = null; fillPicker(); break;
     case 'fOpen': S.pick.open = S.pick.open === b.dataset.k ? null : b.dataset.k; fillPicker(); break;
     case 'fSet': S.pick[b.dataset.k] = b.dataset.v || null; if (b.dataset.k === 'g' && !['stretch','mobility'].includes(S.pick.g)) S.pick.a = null; S.pick.open = (b.dataset.k === 'g' && ['stretch','mobility'].includes(S.pick.g)) ? 'a' : null; fillPicker(); break;
     case 'addCustom': {
