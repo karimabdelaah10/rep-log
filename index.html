@@ -349,6 +349,11 @@ a.btn{text-decoration:none}
 .pick-item{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border-radius:14px;text-align:start;width:100%;box-shadow:var(--shadow);transition:transform .12s}
 .pick-item:active{transform:scale(.98)}
 .pick-item .nm{flex:1;min-width:0;font-weight:500}
+.vbadge{display:inline-flex;vertical-align:-2px;margin-inline-start:5px}
+.photo-ok{display:flex;align-items:center;gap:8px;margin:10px auto 4px;padding:8px 14px;border-radius:999px;border:1.5px dashed var(--muted);color:var(--muted);font-weight:700;font-size:14px;background:transparent}
+.photo-ok .vb{filter:grayscale(1);opacity:.55}
+.photo-ok.on{border:1.5px solid #1D9BF0;color:#1D9BF0;background:color-mix(in srgb,#1D9BF0 10%,transparent)}
+.photo-ok.on .vb{filter:none;opacity:1}
 .pick-item small{color:var(--muted);display:inline-flex;align-items:center;gap:4px}
 .pick-item small .hm{color:var(--accent);display:inline-flex}
 .lv{display:inline-flex;gap:2px;margin-inline-start:6px;vertical-align:middle}
@@ -836,7 +841,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '78';
+const APP_VERSION = '79';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -1246,6 +1251,8 @@ const levelOf = ex => (ex && (LEVEL[ex.id] || ex.lv)) || null;
 const homeKit = () => S.profile.homeKit || [];
 const homeOk = ex => { const n = needsOf(ex); return n !== 'gym' && n.every(k => homeKit().includes(k)); };
 const homeAny = ex => needsOf(ex) !== 'gym';
+const photoOkOf = id => (S.profile.photoOk || []).includes(id);
+const vBadge = id => photoOkOf(id) ? `<span class="vbadge" title="${esc(t('photoOkOn'))}">${ICON.verified}</span>` : '';
 /* calisthenics: bodyweight strength & skills (not stretches/mobility) */
 const CALI_EXTRA = new Set(['ab_wheel','copenhagen','dragon_flag','pullup','chinup','dips','inv_row']);
 const caliOf = ex => !!ex && (String(ex.id).startsWith('cal_') || (!['stretch','mobility'].includes(ex.g) && (ex.e === 'bodyweight' || CALI_EXTRA.has(ex.id))));
@@ -1442,7 +1449,7 @@ const I18N = {
     today:'النهارده', yesterday:'امبارح', daysAgo:n=>`من ${n} أيام`,
     up:'لفوق', down:'لتحت', back:'رجوع', min:n=>`${n} د`,
     openGif:'افتح الحركة', figLegend:'العضلات اللي بتشتغل', actOpen:'افتح الجلسة', actDelete:'امسح من السجل', longPressHint:'اضغط مطوّل على أي جلسة عشان تمسحها.',
-    muscles:'العضلات', steps:'الخطوات', tip:'نصيحة', ytBtn:'فيديو على يوتيوب', noGuide:'مفيش شرح مكتوب للتمرين ده لأنك ضفته بنفسك. استخدم زرار اليوتيوب اللي تحت.',
+    photoOkOn:'الصور متراجعة وتمام', photoOkOff:'علّم إن الصور تمام', muscles:'العضلات', steps:'الخطوات', tip:'نصيحة', ytBtn:'فيديو على يوتيوب', noGuide:'مفيش شرح مكتوب للتمرين ده لأنك ضفته بنفسك. استخدم زرار اليوتيوب اللي تحت.',
     fArea:'المنطقة', stretchesFor:n=>`إطالات لـ${n}`,
     a_neck:'الرقبة', a_shoulders:'الأكتاف', a_chest:'الصدر', a_back:'الضهر', a_lowback:'أسفل الضهر', a_arms:'الدراع', a_hips:'الحوض ومثنية الفخذ', a_glutes:'الألوية', a_quads:'الأمامية', a_hamstrings:'الخلفية', a_calves:'السمانة',
     importRoutinesQ:(n, names)=>`هيتضاف ${n} روتين لروتيناتك: ${names}. لو عندك روتين بنفس الاسم هيتحدّث. جلساتك وإعداداتك مش هتتأثر.`, routinesImported:n=>`اتضاف ${n} روتين`,
@@ -1511,7 +1518,7 @@ const I18N = {
     today:'Today', yesterday:'Yesterday', daysAgo:n=>`${n} days ago`,
     up:'Move up', down:'Move down', back:'Back', min:n=>`${n} min`,
     openGif:'Open the animation', figLegend:'Muscles working', actOpen:'Open session', actDelete:'Delete from history', longPressHint:'Long-press a session to delete it.',
-    muscles:'Muscles', steps:'Steps', tip:'Tip', ytBtn:'YouTube video', noGuide:'No written guide for exercises you added yourself. Use the YouTube button below.',
+    muscles:'Muscles', steps:'Steps', tip:'Tip', ytBtn:'YouTube video', photoOkOn:'Images approved', photoOkOff:'Mark images as approved', noGuide:'No written guide for exercises you added yourself. Use the YouTube button below.',
     fArea:'Area', stretchesFor:n=>`Stretches for ${n}`,
     a_neck:'Neck', a_shoulders:'Shoulders', a_chest:'Chest', a_back:'Back', a_lowback:'Lower back', a_arms:'Arms', a_hips:'Hips & hip flexors', a_glutes:'Glutes', a_quads:'Quads', a_hamstrings:'Hamstrings', a_calves:'Calves',
     importRoutinesQ:(n, names)=>`${n} routines will be added: ${names}. A routine with the same name is updated. Your sessions and settings stay as they are.`, routinesImported:n=>`${n} routines added`,
@@ -1546,6 +1553,7 @@ const normNum = s => { s = String(s ?? '').replace(/[٠-٩]/g, d => '٠١٢٣٤�
 const fmtW = n => n == null ? '' : (Math.round(n * 100) / 100).toString();
 const fmtInt = n => Math.round(n).toLocaleString('en-US');
 const ICON = {
+  verified:'<svg class="vb" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><polygon points="12.00,0.50 14.48,2.73 17.75,2.04 18.79,5.21 21.96,6.25 21.27,9.52 23.50,12.00 21.27,14.48 21.96,17.75 18.79,18.79 17.75,21.96 14.48,21.27 12.00,23.50 9.52,21.27 6.25,21.96 5.21,18.79 2.04,17.75 2.73,14.48 0.50,12.00 2.73,9.52 2.04,6.25 5.21,5.21 6.25,2.04 9.52,2.73" fill="#1D9BF0" stroke="#1D9BF0" stroke-width="1.6" stroke-linejoin="round"/><path d="M7.6 12.3l3 3 5.8-6.2" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   cali:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18"/><circle cx="12" cy="9" r="2"/><path d="M7 4l3 7v4l-2 5"/><path d="M17 4l-3 7v4l2 5"/></svg>',
   home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg>',
   routines:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="9" width="3" height="6" rx="1"/><rect x="5" y="6.5" width="3" height="11" rx="1"/><rect x="16" y="6.5" width="3" height="11" rx="1"/><rect x="19" y="9" width="3" height="6" rx="1"/><path d="M8 12h8"/></svg>',
@@ -1569,7 +1577,7 @@ const ICON = {
 };
 
 /* ---------- state ---------- */
-const defaultProfile = () => ({ lang:'ar', restSec:90, sound:'bell', homeKit:[], rest:{}, custom:[], routines:[] });
+const defaultProfile = () => ({ lang:'ar', restSec:90, sound:'bell', homeKit:[], rest:{}, custom:[], routines:[], photoOk:[] });
 const S = {
   profile: defaultProfile(),
   sessions: new Map(),
@@ -1596,6 +1604,7 @@ function normalizeProfile(p) {
     restSec: Number(p.restSec) > 0 ? Number(p.restSec) : d.restSec,
     sound: ['bell','beep','off'].includes(p.sound) ? p.sound : d.sound,
     homeKit: Array.isArray(p.homeKit) ? p.homeKit.filter(k => HOME_KIT.includes(k)) : [],
+    photoOk: Array.isArray(p.photoOk) ? [...new Set(p.photoOk.filter(x => typeof x === 'string'))] : [],
     rest: p.rest && typeof p.rest === 'object' ? Object.fromEntries(Object.entries(p.rest).filter(([, v]) => Number(v) >= 0).map(([k, v]) => [k, Number(v)])) : {},
     custom: Array.isArray(p.custom) ? p.custom.filter(x => x && x.id && x.name).map(x => ({ id:x.id, g:GROUPS.includes(x.g) ? x.g : 'other', e:EQUIP.includes(x.e) ? x.e : 'other', ...(MODES.includes(x.m) ? { m:x.m } : {}), name:String(x.name), ...(x.hidden ? { hidden:true } : {}) })) : [],
     routines: Array.isArray(p.routines) ? p.routines.filter(r => r && r.id).map(r => ({
@@ -1662,7 +1671,8 @@ function openHowTo(id, fromPicker) {
   const fig = gif ? `<div class="ext-gif" id="extGif"><img src="${esc(gif)}" alt="${esc(exName(ex))}" onerror="this.parentNode.classList.add('fail')"><a class="btn" href="${esc(gif)}" target="_blank" rel="noopener">${ICON.play.replace('<svg', '<svg width="16" height="16"')}${esc(t('openGif'))}</a></div><div class="photo-cap">Animation: ExerciseDB</div>`
     : ph ? `<div class="photo-anim ${ph.src.length > 2 ? 'multi' : ''}" role="img" aria-label="${esc(exName(ex))}" style="aspect-ratio:${ph.w}/${ph.h};max-height:58vh;margin-inline:auto;width:min(100%, calc(58vh * ${ph.w} / ${ph.h}))">${ph.src.length > 2 ? ph.src.map((u, k) => `<img src="${u}" alt="" class="${k ? '' : 'on'}">`).join('') : `<img src="${ph.src[0]}" alt=""><img src="${ph.src[1]}" alt="">`}</div>${ph.credit ? `<div class="photo-cap">${esc(ph.credit)}</div>` : ''}`
     : FIGURES[id] ? `<div class="fig"><div id="figBox" aria-label="${esc(exName(ex))}"></div><span class="legend"><i></i>${esc(t('figLegend'))}</span></div>` : '';
-  openSheet(exName(ex), fig + body.replace('<div class="guide-links">', best + '<div class="guide-links">'), fromPicker ? el => {
+  const okBtn = ph ? `<button class="photo-ok ${photoOkOf(id) ? 'on' : ''}" data-act="photoOk" data-id="${esc(id)}" aria-pressed="${photoOkOf(id)}">${ICON.verified}<span>${esc(t(photoOkOf(id) ? 'photoOkOn' : 'photoOkOff'))}</span></button>` : '';
+  openSheet(exName(ex), fig + okBtn + body.replace('<div class="guide-links">', best + '<div class="guide-links">'), fromPicker ? el => {
     const on = S.pick.sel.includes(id);
     const foot = document.createElement('div'); foot.className = 'pick-foot';
     foot.innerHTML = `<button class="btn" data-act="pickBack">${esc(t('backToList'))}</button><button class="btn ${on ? '' : 'primary'}" data-act="pickToggleBack" data-id="${esc(id)}">${esc(t(on ? 'unselectThis' : 'selectThis'))}</button>`;
@@ -2563,7 +2573,7 @@ function fillPicker() {
   const coll = new Intl.Collator(LANG === 'en' ? 'en' : 'ar', { sensitivity: 'base', numeric: true });
   const abc = arr => arr.sort((x, y) => coll.compare(exName(x), exName(y)));
   const item = (ex, sub) => {
-    const btn = `<button class="pick-item ${inNow.has(ex.id) ? 'in' : ''}" data-act="pick" data-id="${esc(ex.id)}">${multi ? `<span class="ck">${sel.includes(ex.id) ? sel.indexOf(ex.id) + 1 : ''}</span>` : ''}<span class="nm">${esc(exName(ex))}${lvDots(levelOf(ex))}</span><small>${homeOk(ex) ? `<span class="hm" title="${esc(t('atHome'))}">${ICON.home.replace('<svg', '<svg width="13" height="13"')}</span>` : ''}${esc(inNow.has(ex.id) ? t('inSession') : sub)}</small></button>`;
+    const btn = `<button class="pick-item ${inNow.has(ex.id) ? 'in' : ''}" data-act="pick" data-id="${esc(ex.id)}">${multi ? `<span class="ck">${sel.includes(ex.id) ? sel.indexOf(ex.id) + 1 : ''}</span>` : ''}<span class="nm">${esc(exName(ex))}${vBadge(ex.id)}${lvDots(levelOf(ex))}</span><small>${homeOk(ex) ? `<span class="hm" title="${esc(t('atHome'))}">${ICON.home.replace('<svg', '<svg width="13" height="13"')}</span>` : ''}${esc(inNow.has(ex.id) ? t('inSession') : sub)}</small></button>`;
     return multi ? `<div class="pick-row ${sel.includes(ex.id) ? 'sel' : ''}" data-id="${esc(ex.id)}">${btn}<button class="pick-info" data-act="pickInfo" data-id="${esc(ex.id)}" aria-label="${esc(t('details'))}">${ICON.info}</button></div>` : btn;
   };
   const textOk = ex => !query || [ex.ar, ex.en, ex.name].some(n => n && n.toLowerCase().includes(query));
@@ -2722,6 +2732,7 @@ document.addEventListener('click', async e => {
     case 'pickForSession': openPicker('session'); break;
     case 'pickForRoutine': openPicker('routine'); break;
     case 'pick': if (S.pick.target === 'library') openHowTo(b.dataset.id); else { pickToggle(b.dataset.id); pickMarks(); } break;
+    case 'photoOk': { const id = b.dataset.id, set = new Set(S.profile.photoOk || []); set.has(id) ? set.delete(id) : set.add(id); S.profile.photoOk = [...set]; saveProfile(); const on = set.has(id); b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.querySelector('span').textContent = t(on ? 'photoOkOn' : 'photoOkOff'); if (S.view === 'exercises' && $('#pickList') && !$('.sheet .pick-foot')) fillPicker(); break; }
     case 'pickInfo': S.pick.scroll = $('.sheet-body')?.scrollTop || 0; openHowTo(b.dataset.id, true); break;
     case 'pickBack': userCloseSheet(); break;
     case 'pickToggleBack': pickToggle(b.dataset.id); userCloseSheet(); break;
