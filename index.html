@@ -850,7 +850,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '80';
+const APP_VERSION = '81';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -1263,7 +1263,7 @@ const homeAny = ex => needsOf(ex) !== 'gym';
 /* image status: Claude finished the images (blue) → Karim approves (green) or flags a problem (red) */
 const IMG_REDO = new Set(['squat','s_hang','s_couch','s_chest','s_band_shoulder','leg_ext','calf','side_plank','flutter']);
 const imgDone = id => !!PHOTOS[id] && !IMG_REDO.has(id);
-const imgReviewOf = id => (S.profile.imgReview || {})[id] || null;
+const imgReviewOf = id => { const r = (S.profile.imgReview || {})[id]; return r && PHOTOS[id] && r.img === PHOTOS[id].src[0] ? r.v : null; };
 const imgState = id => { const r = imgReviewOf(id); return r === 'bad' ? 'bad' : r === 'ok' ? 'ok' : imgDone(id) ? 'done' : null; };
 const vBadge = id => { const st = imgState(id); if (!st) return ''; const ic = st === 'bad' ? ICON.rejected : ICON.verified; return `<span class="vbadge st-${st}" title="${esc(t('img_' + st))}">${ic}</span>`; };
 /* calisthenics: bodyweight strength & skills (not stretches/mobility) */
@@ -1618,7 +1618,10 @@ function normalizeProfile(p) {
     restSec: Number(p.restSec) > 0 ? Number(p.restSec) : d.restSec,
     sound: ['bell','beep','off'].includes(p.sound) ? p.sound : d.sound,
     homeKit: Array.isArray(p.homeKit) ? p.homeKit.filter(k => HOME_KIT.includes(k)) : [],
-    imgReview: Object.assign(Array.isArray(p.photoOk) ? Object.fromEntries(p.photoOk.map(x => [x, 'ok'])) : {}, p.imgReview && typeof p.imgReview === 'object' ? Object.fromEntries(Object.entries(p.imgReview).filter(([, v]) => v === 'ok' || v === 'bad')) : {}),
+    // review is tied to the image it was made on: { v:'ok'|'bad', img:<first frame path> }; a new image means a fresh review
+    imgReview: Object.fromEntries(Object.entries(Object.assign(Array.isArray(p.photoOk) ? Object.fromEntries(p.photoOk.map(x => [x, 'ok'])) : {}, p.imgReview && typeof p.imgReview === 'object' ? p.imgReview : {}))
+      .map(([k, v]) => [k, typeof v === 'string' ? { v, img: PHOTOS[k]?.src[0] || '' } : v])
+      .filter(([, v]) => v && (v.v === 'ok' || v.v === 'bad'))),
     rest: p.rest && typeof p.rest === 'object' ? Object.fromEntries(Object.entries(p.rest).filter(([, v]) => Number(v) >= 0).map(([k, v]) => [k, Number(v)])) : {},
     custom: Array.isArray(p.custom) ? p.custom.filter(x => x && x.id && x.name).map(x => ({ id:x.id, g:GROUPS.includes(x.g) ? x.g : 'other', e:EQUIP.includes(x.e) ? x.e : 'other', ...(MODES.includes(x.m) ? { m:x.m } : {}), name:String(x.name), ...(x.hidden ? { hidden:true } : {}) })) : [],
     routines: Array.isArray(p.routines) ? p.routines.filter(r => r && r.id).map(r => ({
@@ -2754,7 +2757,7 @@ document.addEventListener('click', async e => {
     case 'pickForSession': openPicker('session'); break;
     case 'pickForRoutine': openPicker('routine'); break;
     case 'pick': if (S.pick.target === 'library') openHowTo(b.dataset.id); else { pickToggle(b.dataset.id); pickMarks(); } break;
-    case 'imgReview': { const id = b.dataset.id, v = b.dataset.v, rv = { ...(S.profile.imgReview || {}) }; if (rv[id] === v) delete rv[id]; else rv[id] = v; S.profile.imgReview = rv; saveProfile(); const box = $('#imgReview'); if (box) box.outerHTML = imgReviewBar(id); if (S.view === 'exercises' && $('#pickList') && !$('.sheet .pick-foot')) fillPicker(); break; }
+    case 'imgReview': { const id = b.dataset.id, v = b.dataset.v, rv = { ...(S.profile.imgReview || {}) }; if (imgReviewOf(id) === v) delete rv[id]; else rv[id] = { v, img: PHOTOS[id]?.src[0] || '' }; S.profile.imgReview = rv; saveProfile(); const box = $('#imgReview'); if (box) box.outerHTML = imgReviewBar(id); if (S.view === 'exercises' && $('#pickList') && !$('.sheet .pick-foot')) fillPicker(); break; }
     case 'pickInfo': S.pick.scroll = $('.sheet-body')?.scrollTop || 0; openHowTo(b.dataset.id, true); break;
     case 'pickBack': userCloseSheet(); break;
     case 'pickToggleBack': pickToggle(b.dataset.id); userCloseSheet(); break;
