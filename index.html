@@ -351,6 +351,19 @@ a.btn{text-decoration:none}
 .pick-item .nm{flex:1;min-width:0;font-weight:500}
 .vbadge{display:inline-flex;vertical-align:-2px;margin-inline-start:5px}
 .vbadge.st-ok .vb polygon{fill:#16A34A;stroke:#16A34A}
+.hist-recs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:8px;margin-bottom:12px}
+.hist-recs div{background:var(--surface);box-shadow:var(--shadow);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.hist-recs small{font-size:11px;color:var(--muted);font-weight:700}.hist-recs b{font-size:16px}
+.hist-seg{display:flex;gap:6px;margin-bottom:8px}.hist-seg button{flex:1;padding:7px 4px;border-radius:10px;background:var(--surface);box-shadow:var(--shadow);font-weight:700;font-size:13px;color:var(--muted)}
+.hist-seg button.on{background:var(--accent);color:#fff}
+.hist-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.hist-row{background:var(--surface);box-shadow:var(--shadow);border-radius:12px;padding:10px 12px}
+.hist-d{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.hist-d small{color:var(--muted)}
+.hist-d .pr{margin-inline-start:auto;font-size:12px;font-weight:700;color:#B45309}
+.hist-sets{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.hist-sets span{font-size:13px;padding:3px 8px;border-radius:8px;background:var(--bg, #F3F5F9);font-variant-numeric:tabular-nums}
+.hist-sets span.ty-w{opacity:.6}
+.hist-note{font-size:13px;color:var(--muted);margin-top:6px}
+.rec[data-act]{cursor:pointer}
 .img-review{margin:10px 0 6px;display:flex;flex-direction:column;align-items:center;gap:8px}
 .ir-status{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--muted)}
 .ir-status .vbadge{margin:0}
@@ -855,7 +868,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '90';
+const APP_VERSION = '91';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -1473,7 +1486,7 @@ const I18N = {
     today:'النهارده', yesterday:'امبارح', daysAgo:n=>`من ${n} أيام`,
     up:'لفوق', down:'لتحت', back:'رجوع', min:n=>`${n} د`,
     openGif:'افتح الحركة', figLegend:'العضلات اللي بتشتغل', actOpen:'افتح الجلسة', actDelete:'امسح من السجل', longPressHint:'اضغط مطوّل على أي جلسة عشان تمسحها.',
-    img_done:'الصور خلصت — مستنية مراجعتك', img_ok:'انت اعتمدت الصور دي', img_bad:'علّمت إن الصور فيها مشكلة', img_none:'الصور لسه شغالين عليها', imgApprove:'اعتمد', imgReject:'فيها مشكلة', imgLegend:'الصور:', lg_done:'خلصت', lg_ok:'اعتمدتها', lg_bad:'محتاجة تعديل', muscles:'العضلات', steps:'الخطوات', tip:'نصيحة', ytBtn:'فيديو على يوتيوب', noGuide:'مفيش شرح مكتوب للتمرين ده لأنك ضفته بنفسك. استخدم زرار اليوتيوب اللي تحت.',
+    histBtn:'التاريخ', histOpen:'تاريخ التمرين والتقدّم', histTitle:n=>`تاريخ: ${n}`, histEmpty:'لسه ما سجّلتش التمرين ده في أي تمرينة.', histNeed2:'محتاج تمرينتين على الأقل عشان يظهر الرسم.', histTimes:'مرات', histPR:'رقم قياسي', hm_e1:'1RM متوقع', hm_maxw:'أتقل وزن', hm_vol:'الحجم', hm_reps:'العدّات', hm_secs:'الوقت', replaceEx:'بدّل التمرين', replaceTitle:n=>`بدّل «${n}» بـ…`, replaceDoneQ:'فيه مجموعات متسجّلة في التمرين ده. تبدّله برضو؟', replacedTo:n=>`اتبدّل بـ ${n}`, img_done:'الصور خلصت — مستنية مراجعتك', img_ok:'انت اعتمدت الصور دي', img_bad:'علّمت إن الصور فيها مشكلة', img_none:'الصور لسه شغالين عليها', imgApprove:'اعتمد', imgReject:'فيها مشكلة', imgLegend:'الصور:', lg_done:'خلصت', lg_ok:'اعتمدتها', lg_bad:'محتاجة تعديل', muscles:'العضلات', steps:'الخطوات', tip:'نصيحة', ytBtn:'فيديو على يوتيوب', noGuide:'مفيش شرح مكتوب للتمرين ده لأنك ضفته بنفسك. استخدم زرار اليوتيوب اللي تحت.',
     fArea:'المنطقة', stretchesFor:n=>`إطالات لـ${n}`,
     a_neck:'الرقبة', a_shoulders:'الأكتاف', a_chest:'الصدر', a_back:'الضهر', a_lowback:'أسفل الضهر', a_arms:'الدراع', a_hips:'الحوض ومثنية الفخذ', a_glutes:'الألوية', a_quads:'الأمامية', a_hamstrings:'الخلفية', a_calves:'السمانة',
     importRoutinesQ:(n, names)=>`هيتضاف ${n} روتين لروتيناتك: ${names}. لو عندك روتين بنفس الاسم هيتحدّث. جلساتك وإعداداتك مش هتتأثر.`, routinesImported:n=>`اتضاف ${n} روتين`,
@@ -1542,7 +1555,7 @@ const I18N = {
     today:'Today', yesterday:'Yesterday', daysAgo:n=>`${n} days ago`,
     up:'Move up', down:'Move down', back:'Back', min:n=>`${n} min`,
     openGif:'Open the animation', figLegend:'Muscles working', actOpen:'Open session', actDelete:'Delete from history', longPressHint:'Long-press a session to delete it.',
-    muscles:'Muscles', steps:'Steps', tip:'Tip', ytBtn:'YouTube video', img_done:'Images finished by Claude — waiting for your review', img_ok:'You approved these images', img_bad:'You flagged a problem with these images', img_none:'Images still in progress', imgApprove:'Approve', imgReject:'Problem', imgLegend:'Images:', lg_done:'finished', lg_ok:'approved', lg_bad:'needs a fix', noGuide:'No written guide for exercises you added yourself. Use the YouTube button below.',
+    muscles:'Muscles', steps:'Steps', tip:'Tip', ytBtn:'YouTube video', histBtn:'History', histOpen:'Exercise history & progress', histTitle:n=>`History: ${n}`, histEmpty:'You haven’t logged this exercise yet.', histNeed2:'Log it at least twice to see the chart.', histTimes:'Times', histPR:'PR', hm_e1:'Est. 1RM', hm_maxw:'Heaviest', hm_vol:'Volume', hm_reps:'Reps', hm_secs:'Time', replaceEx:'Replace exercise', replaceTitle:n=>`Replace “${n}” with…`, replaceDoneQ:'This exercise has logged sets. Replace it anyway?', replacedTo:n=>`Replaced with ${n}`, img_done:'Images finished by Claude — waiting for your review', img_ok:'You approved these images', img_bad:'You flagged a problem with these images', img_none:'Images still in progress', imgApprove:'Approve', imgReject:'Problem', imgLegend:'Images:', lg_done:'finished', lg_ok:'approved', lg_bad:'needs a fix', noGuide:'No written guide for exercises you added yourself. Use the YouTube button below.',
     fArea:'Area', stretchesFor:n=>`Stretches for ${n}`,
     a_neck:'Neck', a_shoulders:'Shoulders', a_chest:'Chest', a_back:'Back', a_lowback:'Lower back', a_arms:'Arms', a_hips:'Hips & hip flexors', a_glutes:'Glutes', a_quads:'Quads', a_hamstrings:'Hamstrings', a_calves:'Calves',
     importRoutinesQ:(n, names)=>`${n} routines will be added: ${names}. A routine with the same name is updated. Your sessions and settings stay as they are.`, routinesImported:n=>`${n} routines added`,
@@ -1577,6 +1590,8 @@ const normNum = s => { s = String(s ?? '').replace(/[٠-٩]/g, d => '٠١٢٣٤�
 const fmtW = n => n == null ? '' : (Math.round(n * 100) / 100).toString();
 const fmtInt = n => Math.round(n).toLocaleString('en-US');
 const ICON = {
+  swap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4 3 8l4 4"/><path d="M3 8h13a4 4 0 0 1 4 4"/><path d="m17 20 4-4-4-4"/><path d="M21 16H8a4 4 0 0 1-4-4"/></svg>',
+  hist:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/></svg>',
   verified:'<svg class="vb" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><polygon points="12.00,0.50 14.48,2.73 17.75,2.04 18.79,5.21 21.96,6.25 21.27,9.52 23.50,12.00 21.27,14.48 21.96,17.75 18.79,18.79 17.75,21.96 14.48,21.27 12.00,23.50 9.52,21.27 6.25,21.96 5.21,18.79 2.04,17.75 2.73,14.48 0.50,12.00 2.73,9.52 2.04,6.25 5.21,5.21 6.25,2.04 9.52,2.73" fill="#1D9BF0" stroke="#1D9BF0" stroke-width="1.6" stroke-linejoin="round"/><path d="M7.6 12.3l3 3 5.8-6.2" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   rejected:'<svg class="vb" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#E5383B"/><path d="M8.3 8.3l7.4 7.4M15.7 8.3l-7.4 7.4" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>',
   cali:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18"/><circle cx="12" cy="9" r="2"/><path d="M7 4l3 7v4l-2 5"/><path d="M17 4l-3 7v4l2 5"/></svg>',
@@ -1722,7 +1737,8 @@ function openHowTo(id, fromPicker) {
     <div class="section"><div class="label">${esc(t('steps'))}</div><ol class="guide-steps">${(L ? G.e : G.a).map(x => `<li>${esc(x)}</li>`).join('')}</ol></div>
     <div class="guide-tip"><b>${esc(t('tip'))}:</b> ${esc(L ? G.te : G.ta)}</div>` : `<div class="empty">${esc(t('noGuide'))}</div>`}
     <div class="guide-links">
-    <a class="btn block" href="${esc(ytURL(id))}" target="_blank" rel="noopener">${ICON.play.replace('<svg', '<svg width="16" height="16"')}${esc(t('ytBtn'))}</a></div>`;
+    <a class="btn block" href="${esc(ytURL(id))}" target="_blank" rel="noopener">${ICON.play.replace('<svg', '<svg width="16" height="16"')}${esc(t('ytBtn'))}</a>
+    ${exHistory(id).length ? `<button class="btn block" data-act="history" data-ex="${esc(id)}">${ICON.hist.replace('<svg', '<svg width="16" height="16"')}${esc(t('histOpen'))}</button>` : ''}</div>`;
   const r = computeRecords().find(x => x.exId === id);
   const best = r ? `<div class="guide-tip"><b>${esc(t('yourBest'))}:</b> ${esc(r.md === 'wr' && r.maxW ? `${t('recHeaviest')} ${fmtW(r.maxW)}×${r.maxWr} · ${t('rec1rm')} ${fmtW(half(r.e1))} ${t('kg')}` : r.md === 't' ? `${t('recLongest')} ${r.maxR}${t('secShort')}` : `${t('recMostReps')} ${r.maxR}`)} · ${esc(t('recTimes', r.n))}</div>` : '';
   const ph = PHOTOS[id], gif = EXT_GIFS[id];
@@ -2087,7 +2103,7 @@ function viewRecords() {
     if (r.md === 'wr' && r.maxW) { vals.push(val(t('recHeaviest'), `${fmtW(r.maxW)}×${r.maxWr}`, r.maxWAt)); vals.push(val(t('rec1rm'), `${fmtW(half(r.e1))} ${t('kg')}`, r.e1At)); }
     else if (r.md === 't') vals.push(val(t('recLongest'), `${r.maxR}${t('secShort')}`, r.maxRAt));
     else vals.push(val(t('recMostReps'), String(r.maxR), r.maxRAt));
-    return `<div class="rec"><div class="nm">${esc(nameOf(r.exId))} <small class="muted">· ${esc(t('recTimes', r.n))}</small></div><div class="vals">${vals.join('')}</div></div>`;
+    return `<div class="rec" data-act="history" data-ex="${esc(r.exId)}" role="button" tabindex="0"><div class="nm">${esc(nameOf(r.exId))} <small class="muted">· ${esc(t('recTimes', r.n))}</small></div><div class="vals">${vals.join('')}</div></div>`;
   }).join('')}</div>`;
 }
 
@@ -2095,8 +2111,10 @@ function exHead(exId, i, count, prefix) {
   const ex = exById(exId);
   return `<div class="ex-head"><div class="ttl"><h3>${esc(exName(ex))}${vBadge(exId)}</h3>${exTags(ex)}
       <div class="ex-meta"><button class="mini acc" data-act="restEdit" data-ex="${esc(exId)}">${ICON.clock}${esc(t('restOf', restLabel(restFor(exId))))}</button>
-      <button class="mini" data-act="howto" data-ex="${esc(exId)}">${ICON.play}${esc(t('video'))}</button></div></div>
+      <button class="mini" data-act="howto" data-ex="${esc(exId)}">${ICON.play}${esc(t('video'))}</button>
+      <button class="mini" data-act="history" data-ex="${esc(exId)}">${ICON.hist.replace('<svg', '<svg width="14" height="14"')}${esc(t('histBtn'))}</button></div></div>
     <div class="tools">
+      <button class="iconbtn" data-act="${prefix}Replace" data-i="${i}" aria-label="${esc(t('replaceEx'))}" title="${esc(t('replaceEx'))}">${ICON.swap}</button>
       <button class="iconbtn" data-act="${prefix}Up" data-i="${i}" aria-label="${esc(t('up'))}" ${i === 0 ? 'disabled' : ''}>${ICON.up}</button>
       <button class="iconbtn" data-act="${prefix}Down" data-i="${i}" aria-label="${esc(t('down'))}" ${i === count - 1 ? 'disabled' : ''}>${ICON.down}</button>
       <button class="iconbtn" data-act="${prefix}Remove" data-i="${i}" aria-label="${esc(t('remove'))}">${ICON.x}</button>
@@ -2628,7 +2646,7 @@ function fillPicker() {
   const query = P.q.trim().toLowerCase();
   const inNow = new Set(P.target === 'library' ? [] : (P.target === 'session' ? (cur()?.items || []) : (S.routineDraft?.items || [])).map(i => i.exId));
   const all = [...PRESETS, ...S.profile.custom.filter(c => !c.hidden)];
-  const multi = P.target !== 'library', sel = P.sel || [];
+  const multi = P.target !== 'library' && P.replace == null, sel = P.sel || [];
   const coll = new Intl.Collator(LANG === 'en' ? 'en' : 'ar', { sensitivity: 'base', numeric: true });
   const abc = arr => arr.sort((x, y) => coll.compare(exName(x), exName(y)));
   const item = (ex, sub) => {
@@ -2661,6 +2679,74 @@ function fillPicker() {
   $('#pickList').innerHTML = html;
 }
 function pickExercise(exId) { addExercises([exId]); }
+async function replaceExercise(newId) {
+  const i = S.pick.replace, target = S.pick.target;
+  if (target === 'session') {
+    const s = cur(); if (!s || !s.items[i]) return;
+    const old = s.items[i];
+    if (old.exId === newId) { closeSheet(); return; }
+    if (old.sets.some(x => x.done) && !(await ask(t('replaceDoneQ'), t('replaceEx')))) return;
+    closeSheet();
+    const n = Math.max(1, old.sets.length);
+    const pre = prefillSets(newId, null);
+    const sets = Array.from({ length:n }, (_, k) => ({ ...(pre[k] || pre[pre.length - 1] || emptySet()), done:false }));
+    s.items[i] = { exId:newId, note:'', plan:[], sets };
+    saveSession(s); render();
+  } else if (target === 'routine' && S.routineDraft) {
+    const d = S.routineDraft, old = d.items[i]; if (!old) return;
+    closeSheet();
+    const last = lastFor(newId, null);
+    d.items[i] = { exId:newId, sets:old.sets.map((x, k) => ({ w:last?.sets[k]?.w ?? null, r:x.r ?? null, ...(x.t ? { t:x.t } : {}) })) };
+    render();
+  }
+  S.pick.replace = null;
+  [...document.querySelectorAll('.ex')][i]?.classList.add('new');
+  [...document.querySelectorAll('.ex')][i]?.scrollIntoView({ block:'center', behavior:'smooth' });
+  toast(t('replacedTo', nameOf(newId)));
+}
+/* ---------- exercise history ---------- */
+function exHistory(exId) {
+  const out = [];
+  for (const s of finishedSessions()) for (const it of s.items) {
+    if (it.exId !== exId) continue;
+    const sets = it.sets.filter(x => x.r);
+    if (sets.length) out.push({ at:s.startedAt, name:s.routineName || '', sets, note:it.note || '' });
+  }
+  return out; // newest first
+}
+function openHistory(exId) {
+  const md = modeOf(exId);
+  S.hist = { exId, m: md === 'wr' ? 'e1' : md === 't' ? 'secs' : 'reps' };
+  openSheet(t('histTitle', nameOf(exId)), '<div id="histBody"></div>', () => fillHistory());
+}
+function fillHistory() {
+  const box = $('#histBody'); if (!box || !S.hist) return;
+  const { exId, m } = S.hist, md = modeOf(exId), H = exHistory(exId);
+  if (!H.length) { box.innerHTML = `<div class="empty">${esc(t('histEmpty'))}</div>`; return; }
+  const work = h => h.sets.filter(x => x.t !== 'w');
+  const metric = {
+    e1: h => Math.max(0, ...work(h).map(e1rm)),
+    maxw: h => Math.max(0, ...work(h).map(x => x.w || 0)),
+    vol: h => work(h).reduce((a, x) => a + (x.w || 0) * (x.r || 0), 0),
+    reps: h => Math.max(0, ...work(h).map(x => x.r || 0)),
+    secs: h => Math.max(0, ...work(h).map(x => x.r || 0)),
+  };
+  const opts = md === 'wr' ? ['e1', 'maxw', 'vol'] : md === 't' ? ['secs'] : ['reps'];
+  const unit = { e1:t('kg'), maxw:t('kg'), vol:t('kg'), reps:t('reps'), secs:t('secs') }[m];
+  const pts = H.slice().reverse().map(h => ({ at:h.at, v:half(metric[m](h)) })).filter(p => p.v > 0);
+  const best = pts.reduce((b, p) => p.v > b ? p.v : b, 0);
+  const r = computeRecords().find(x => x.exId === exId);
+  const recs = r ? (md === 'wr' && r.maxW ? [[t('recHeaviest'), `${fmtW(r.maxW)}×${r.maxWr}`], [t('rec1rm'), `${fmtW(half(r.e1))} ${t('kg')}`], [t('recMostReps'), r.maxR]] : md === 't' ? [[t('recLongest'), `${r.maxR}${t('secShort')}`]] : [[t('recMostReps'), r.maxR]]) : [];
+  // per-session best for PR marks
+  let run = 0; const prAt = new Set();
+  for (const p of pts) { if (p.v > run) { if (run > 0) prAt.add(p.at); run = p.v; } }
+  box.innerHTML = `
+    ${recs.length ? `<div class="hist-recs">${recs.map(([k, v]) => `<div><small>${esc(k)}</small><b>${esc(String(v))}</b></div>`).join('')}<div><small>${esc(t('histTimes'))}</small><b>${H.length}</b></div></div>` : ''}
+    ${opts.length > 1 ? `<div class="seg hist-seg">${opts.map(o => `<button class="${o === m ? 'on' : ''}" data-act="histM" data-v="${o}">${esc(t('hm_' + o))}</button>`).join('')}</div>` : ''}
+    <div class="chart">${pts.length >= 2 ? lineChart(pts, unit) : `<div class="empty">${esc(t('histNeed2'))}</div>`}</div>
+    <div class="hist-list">${H.map(h => `<div class="hist-row"><div class="hist-d"><b>${esc(fmtDate(h.at, { weekday:'short', day:'numeric', month:'short' }))}</b>${h.name ? `<small>${esc(h.name)}</small>` : ''}${prAt.has(h.at) ? `<span class="pr">🏆 ${esc(t('histPR'))}</span>` : ''}</div>
+      <div class="hist-sets">${h.sets.map(x => `<span class="${x.t ? 'ty-' + x.t : ''}">${esc(fmtSet(x, md))}</span>`).join('')}</div>${h.note ? `<div class="hist-note">${esc(h.note)}</div>` : ''}</div>`).join('')}</div>`;
+}
 function addExercises(ids) {
   closeSheet();
   if (!ids.length) return;
@@ -2790,7 +2876,11 @@ document.addEventListener('click', async e => {
     case 'exRemove': swStop(true); if (await ask(t('removeExQ', nameOf(s.items[i].exId)), t('remove'))) { s.items.splice(i, 1); saveSession(s); render(); } break;
     case 'pickForSession': openPicker('session'); break;
     case 'pickForRoutine': openPicker('routine'); break;
-    case 'pick': if (S.pick.target === 'library') openHowTo(b.dataset.id); else { pickToggle(b.dataset.id); pickMarks(); } break;
+    case 'pick': if (S.pick.target === 'library') openHowTo(b.dataset.id); else if (S.pick.replace != null) replaceExercise(b.dataset.id); else { pickToggle(b.dataset.id); pickMarks(); } break;
+    case 'exReplace': openPicker('session'); S.pick.replace = i; fillPicker(); $('.sheet h2, .sheet .sheet-title') && ($('.sheet h2, .sheet .sheet-title').textContent = t('replaceTitle', nameOf(s.items[i].exId))); break;
+    case 'rReplace': openPicker('routine'); S.pick.replace = i; fillPicker(); $('.sheet h2, .sheet .sheet-title') && ($('.sheet h2, .sheet .sheet-title').textContent = t('replaceTitle', nameOf(S.routineDraft.items[i].exId))); break;
+    case 'history': openHistory(b.dataset.ex); break;
+    case 'histM': S.hist.m = b.dataset.v; fillHistory(); break;
     case 'imgReview': { const id = b.dataset.id, v = b.dataset.v, rv = { ...(S.profile.imgReview || {}) }; if (imgReviewOf(id) === v) delete rv[id]; else rv[id] = { v, img: PHOTOS[id]?.src[0] || '', t: Date.now() }; S.profile.imgReview = rv; saveProfile(); const box = $('#imgReview'); if (box) box.outerHTML = imgReviewBar(id); if (S.view === 'exercises' && $('#pickList') && !$('.sheet .pick-foot')) fillPicker(); break; }
     case 'pickInfo': S.pick.scroll = $('.sheet-body')?.scrollTop || 0; openHowTo(b.dataset.id, true); break;
     case 'pickBack': userCloseSheet(); break;
