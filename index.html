@@ -159,6 +159,13 @@ html,body{overscroll-behavior-x:none}
 .sets{display:flex;flex-direction:column;gap:7px}
 .set{display:grid;grid-template-columns:30px 1fr 1fr 48px;gap:8px;align-items:center}
 .set.bw{grid-template-columns:30px 1fr 48px}
+.set-wrap{position:relative;overflow:hidden;margin:-4px;padding:4px}
+.set-wrap>.set{position:relative;z-index:1;transition:transform .22s cubic-bezier(.32,.72,0,1);touch-action:pan-y}
+.set-wrap.dragging>.set{transition:none}
+.set-del{position:absolute;right:4px;top:50%;width:52px;height:48px;margin-top:-24px;border-radius:13px;background:var(--danger);color:#fff;display:grid;place-items:center;opacity:0;transform:scale(.6);transition:opacity .18s,transform .18s;pointer-events:none}
+.set-del svg{width:20px;height:20px}
+.set-wrap.open .set-del{opacity:1;transform:none;pointer-events:auto}
+.set-wrap.open>.set{transform:translateX(-64px)}
 .set.head{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center}
 .set .no{font-family:var(--f-disp);font-weight:700;font-size:18px;text-align:center;color:var(--muted);transition:color .2s,background .2s;height:38px;border-radius:10px;display:grid;place-items:center}
 button.no:hover{background:var(--surface-2)}
@@ -881,7 +888,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '95';
+const APP_VERSION = '96';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -2196,13 +2203,13 @@ function exCard(s, it, i) {
     const ph = it.plan[j] && (it.plan[j].r != null || it.plan[j].w != null) ? it.plan[j] : last ? (last.sets[j] || last.sets[last.sets.length - 1]) : null;
     const running = sw.on && sw.sid === s.id && sw.i === i && sw.j === j;
     const timed = md === 't' && !s.endedAt;
-    return `<div class="set ${bw ? 'bw' : ''} ${timed ? 'timed' : ''} ${x.done ? 'done' : ''} ${x.pr ? 'pr' : ''} ${S.newKey === `${i}-${j}` ? 'new' : ''}">
+    return `<div class="set-wrap"><button class="set-del" data-act="swDelSet" data-c="s" data-i="${i}" data-j="${j}" tabindex="-1" aria-label="${esc(t('removeThisSet'))}">${ICON.x}</button><div class="set ${bw ? 'bw' : ''} ${timed ? 'timed' : ''} ${x.done ? 'done' : ''} ${x.pr ? 'pr' : ''} ${S.newKey === `${i}-${j}` ? 'new' : ''}">
       <button class="no ${x.t ? 'ty-' + x.t : ''}" data-act="setType" data-i="${i}" data-j="${j}" aria-label="${esc(t('setTypeA'))}">${esc(setNo(it.sets, j))}</button>
       ${bw ? '' : `<input id="w-${i}-${j}" type="text" inputmode="decimal" autocomplete="off" data-f="w" data-i="${i}" data-j="${j}" value="${esc(fmtW(x.w))}" placeholder="${ph ? esc(fmtW(ph.w)) : ''}" aria-label="${esc(t('kg'))} ${j + 1}">`}
       <input id="r-${i}-${j}" type="text" inputmode="numeric" autocomplete="off" data-f="r" data-i="${i}" data-j="${j}" value="${x.r ?? ''}" placeholder="${ph && ph.r != null ? ph.r : ''}" aria-label="${esc(md === 't' ? t('secs') : t('reps'))} ${j + 1}">
       ${timed ? `<button class="sw ${running ? 'on' : ''}" data-act="sw" data-i="${i}" data-j="${j}" aria-label="${esc(t(running ? 'swStop' : 'swStart'))}">${running ? ICON.stop : ICON.play}</button>` : ''}
       <button class="check" data-act="toggleSet" data-i="${i}" data-j="${j}" aria-pressed="${x.done}" aria-label="✓ ${j + 1}">${x.pr ? ICON.trophy : ICON.check}</button>
-    </div>`;
+    </div></div>`;
   }).join('');
   const noteOpen = it.note || it._noteOpen;
   const allDone = it.sets.length > 0 && it.sets.every(x => x.done);
@@ -2248,12 +2255,12 @@ function viewRoutineEdit() {
   const exists = S.profile.routines.some(r => r.id === d.id);
   const cards = d.items.map((it, i) => {
     const ex = exById(it.exId), md = modeOf(it.exId), bw = md !== 'wr';
-    const rows = it.sets.map((x, j) => `<div class="set ${bw ? 'bw' : ''} ${S.newKey === `r${i}-${j}` ? 'new' : ''}">
+    const rows = it.sets.map((x, j) => `<div class="set-wrap" ${it.sets.length <= 1 ? 'data-noswipe' : ''}><button class="set-del" data-act="swDelSet" data-c="r" data-i="${i}" data-j="${j}" tabindex="-1" aria-label="${esc(t('removeThisSet'))}">${ICON.x}</button><div class="set ${bw ? 'bw' : ''} ${S.newKey === `r${i}-${j}` ? 'new' : ''}">
       <button class="no ${x.t ? 'ty-' + x.t : ''}" data-act="rSetType" data-i="${i}" data-j="${j}" aria-label="${esc(t('setTypeA'))}">${esc(setNo(it.sets, j))}</button>
       ${bw ? '' : `<input id="rw-${i}-${j}" type="text" inputmode="decimal" autocomplete="off" data-f="rw" data-i="${i}" data-j="${j}" value="${esc(fmtW(x.w))}" placeholder="–" aria-label="${esc(t('kg'))} ${j + 1}">`}
       <input id="rr-${i}-${j}" type="text" inputmode="numeric" autocomplete="off" data-f="rr" data-i="${i}" data-j="${j}" value="${x.r ?? ''}" placeholder="–" aria-label="${esc(md === 't' ? t('secs') : t('reps'))} ${j + 1}">
       <button class="xbtn" data-act="rDelSet" data-i="${i}" data-j="${j}" aria-label="${esc(t('removeThisSet'))}" ${it.sets.length <= 1 ? 'disabled' : ''}>${ICON.x}</button>
-    </div>`).join('');
+    </div></div>`).join('');
     return `<article class="ex ${S.newKey === 'rex' + i ? 'new' : ''}">
       ${exHead(it.exId, i, d.items.length, 'r')}
       <div class="sets">${setHeader(md)}${rows}</div>
@@ -2878,6 +2885,7 @@ document.addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
   if (lp.fired && b.dataset.act === 'openSession') { lp.fired = false; return; }
   if (lpr.fired && b.closest('.r-card[data-lpr]')) { lpr.fired = false; return; }
+  if (sws.swiped) { sws.swiped = false; if (b.closest('.set-wrap') && !b.closest('.set-del')) return; }
   const a = b.dataset.act, i = +b.dataset.i, j = +b.dataset.j;
   const s = cur(), d = S.routineDraft;
   switch (a) {
@@ -2992,6 +3000,12 @@ document.addEventListener('click', async e => {
     case 'newRoutine': S.routineDraft = { id:newId(), name:'', items:[] }; go('routineEdit'); setTimeout(() => $('#rname')?.focus(), 60); break;
     case 'editRoutine': { const r = S.profile.routines.find(r => r.id === b.dataset.id); if (r) { S.routineDraft = clone(r); go('routineEdit'); } break; }
     case 'rAddSet': { const sets = d.items[i].sets; const prev = sets[sets.length - 1]; sets.push({ w:prev ? prev.w : null, r:prev ? prev.r : null }); S.newKey = `r${i}-${sets.length - 1}`; render(); break; }
+    case 'swDelSet': {
+      if (b.dataset.c === 'r') { if (d && d.items[i] && d.items[i].sets.length > 1) { d.items[i].sets.splice(j, 1); render(); } break; }
+      if (!s || !s.items[i]) break;
+      if (sw.on && sw.sid === s.id && sw.i === i) swStop(true);
+      s.items[i].sets.splice(j, 1); saveSession(s); render(); break;
+    }
     case 'rDelSet': if (d.items[i].sets.length > 1) { d.items[i].sets.splice(j, 1); render(); } break;
     case 'rUp': if (i > 0) { swap(d.items, i - 1, i); render(); } break;
     case 'rDown': if (i < d.items.length - 1) { swap(d.items, i + 1, i); render(); } break;
@@ -3116,6 +3130,39 @@ function sessionActions(id) {
   openSheet(title, `<button class="pick-item" data-act="openFromSheet" data-id="${esc(id)}"><span class="nm">${esc(t('actOpen'))}</span>${ICON.chev}</button>
     <button class="pick-item danger" data-act="delFromHist" data-id="${esc(id)}"><span class="nm">${esc(t('actDelete'))}</span>${ICON.x.replace('<svg', '<svg width="18" height="18"')}</button>`);
 }
+/* set rows: swipe right-to-left to reveal a red delete button */
+const sws = { on:false, lock:null, wrap:null, x0:0, y0:0, dx:0, base:0, swiped:false };
+const closeSwipes = except => document.querySelectorAll('.set-wrap.open').forEach(w => { if (w !== except) { w.classList.remove('open'); w.querySelector(':scope>.set').style.transform = ''; } });
+document.addEventListener('pointerdown', e => {
+  sws.swiped = false;
+  const wrap = e.target.closest('.set-wrap');
+  if (!wrap) { closeSwipes(); return; }
+  if (e.target.closest('.set-del')) return;
+  closeSwipes(wrap);
+  if (S.reorder || wrap.hasAttribute('data-noswipe')) return;
+  Object.assign(sws, { on:true, lock:null, wrap, x0:e.clientX, y0:e.clientY, dx:0, base:wrap.classList.contains('open') ? -64 : 0 });
+});
+document.addEventListener('pointermove', e => {
+  if (!sws.on) return;
+  const dx = e.clientX - sws.x0, dy = e.clientY - sws.y0;
+  if (!sws.lock) {
+    if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { sws.on = false; return; }
+    if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.2) { sws.lock = 'x'; sws.wrap.classList.add('dragging'); clearTimeout(lpc.t); lpc.on = false; if (document.activeElement && sws.wrap.contains(document.activeElement)) document.activeElement.blur(); }
+    else return;
+  }
+  sws.dx = dx;
+  const off = Math.max(-96, Math.min(0, sws.base + dx));
+  sws.wrap.querySelector(':scope>.set').style.transform = `translateX(${off}px)`;
+  sws.wrap.classList.toggle('open', off < -32);
+});
+['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => {
+  if (!sws.on) return; sws.on = false;
+  if (sws.lock !== 'x') { if (sws.base) { sws.wrap.classList.remove('open'); sws.swiped = true; } return; }
+  const w = sws.wrap, open = sws.base + sws.dx < -32;
+  w.classList.remove('dragging'); w.querySelector(':scope>.set').style.transform = '';
+  w.classList.toggle('open', open); sws.swiped = true;
+  if (open) { try { navigator.vibrate && navigator.vibrate(10); } catch {} }
+}));
 /* routines page: long-press a routine card for Edit / Delete */
 const lpr = { t:0, on:false, fired:false, x:0, y:0 };
 function routineActions(id) {
