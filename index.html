@@ -910,7 +910,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '106';
+const APP_VERSION = '107';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -3246,17 +3246,23 @@ function rDragStart() {
   // compact mode: every card collapses to just its name; the other selected cards travel with the dragged one
   const top0 = el.getBoundingClientRect().top;
   document.querySelector('.view.anim')?.classList.remove('anim');   // entry animation (fill: both) would pin transform
+  document.documentElement.style.overflowAnchor = 'none';           // we keep the card in place ourselves
   document.body.classList.add('r-dragging');
   el.classList.add('dragging'); cards.forEach(c => { if (c !== el && sel.has(c.dataset.lpr)) c.classList.add('drag-ghost'); });
   if (sel.size > 1) { const n = document.createElement('span'); n.className = 'r-more'; n.textContent = '+' + (sel.size - 1); el.querySelector('.r-name')?.after(n); }
-  window.scrollBy(0, el.getBoundingClientRect().top - top0);   // keep the card where the finger is after the list shrinks
+  // keep the grabbed card exactly where it was on screen after the list shrinks (pad the page if scrolling can't reach)
+  window.scrollBy(0, el.getBoundingClientRect().top - top0);
+  const view = el.closest('.view'), rem = el.getBoundingClientRect().top - top0;
+  if (view && rem < -1) { const first = cards[0]; first.style.marginTop = (-rem) + 'px'; }
+  else if (view && rem > 1) { view.style.paddingBottom = (rem + innerHeight) + 'px'; window.scrollBy(0, rem); }
   const r = el.getBoundingClientRect();
   Object.assign(rdrag, { on:true, el, cards, sel, others:cards.filter(c => !sel.has(c.dataset.lpr)), to:null, c0:r.top + r.height / 2 + scrollY, y:rdrag.y0 });
   rPlace();
   const tick = () => {
     if (!rdrag.on) return;
-    const y = rdrag.y, top = 140, bot = innerHeight - 150;
-    const v = y < top ? -Math.ceil((top - y) / 6) : y > bot ? Math.ceil((y - bot) / 6) : 0;
+    // edge auto-scroll, only once the finger has moved toward that edge (a card grabbed near the bottom must not run away)
+    const y = rdrag.y, top = 120, bot = innerHeight - 110;
+    const v = y < top && y < rdrag.y0 - 24 ? -Math.ceil((top - y) / 8) : y > bot && y > rdrag.y0 + 24 ? Math.ceil((y - bot) / 8) : 0;
     if (v) { const before = scrollY; window.scrollBy(0, v); if (scrollY !== before) rPlace(); }
     requestAnimationFrame(tick);
   };
@@ -3275,7 +3281,8 @@ function rPlace() {
   }
 }
 function rDragEnd(cancelled) {
-  const d = rdrag; d.on = false; document.body.classList.remove('r-dragging');
+  const d = rdrag; d.on = false; document.body.classList.remove('r-dragging'); document.documentElement.style.overflowAnchor = '';
+  const keep = d.el.getBoundingClientRect().top, keepId = d.id;
   if (!cancelled && d.to != null) {
     const rs = S.profile.routines, moving = rs.filter(r => d.sel.has(r.id)), rest = rs.filter(r => !d.sel.has(r.id));
     const otherIds = d.others.map(c => c.dataset.lpr), anchor = otherIds[d.to];
@@ -3284,6 +3291,8 @@ function rDragEnd(cancelled) {
     if (next.map(r => r.id).join() !== rs.map(r => r.id).join()) { S.profile.routines = next; saveProfile(); toast(t('routinesMoved')); }
   }
   S.rsel = null; S.anim = false; render();
+  const back = document.querySelector(`.r-card[data-lpr="${keepId}"]`);   // cards expand again: keep the dropped one where it was
+  if (back) window.scrollBy(0, back.getBoundingClientRect().top - keep);
 }
 document.addEventListener('contextmenu', e => { if (e.target.closest('.r-card[data-lpr]')) e.preventDefault(); });
 document.addEventListener('pointerdown', e => {
