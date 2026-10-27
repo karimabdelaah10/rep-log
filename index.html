@@ -236,7 +236,16 @@ html,body{touch-action:manipulation}
 
 /* routines */
 .r-card{background:var(--surface);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
-.r-card[data-lpr]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.r-card[data-lpr]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;position:relative;transition:box-shadow .15s,transform .15s}
+.r-card.sel-mode .r-open{padding-inline-end:40px}
+.r-card.sel-mode .r-acts{opacity:.45;pointer-events:none}
+.r-card.sel{box-shadow:0 0 0 2.5px var(--accent),var(--shadow)}
+.r-check{position:absolute;top:14px;inset-inline-end:14px;width:28px;height:28px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;color:transparent;transition:background .15s,border-color .15s}
+.r-check svg{width:16px;height:16px}
+.r-card.sel .r-check{background:var(--accent);border-color:var(--accent);color:#fff}
+.sel-bar{position:fixed;z-index:8;left:12px;right:12px;margin:0 auto;max-width:536px;bottom:calc(80px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:8px;padding:10px;border-radius:18px;background:var(--surface);box-shadow:0 8px 28px rgb(0 0 0 / .18);animation:rise .2s ease both}
+.sel-bar .sel-n{flex:1;text-align:center;font-weight:700;font-size:14px}
+.sel-bar .btn{flex:none}
 .r-open{display:flex;flex-direction:column;gap:8px;text-align:start;width:100%}
 .r-acts{display:flex;gap:8px}.r-acts .btn{flex:1}
 .r-card .r-name{font-family:var(--f-disp);font-weight:800;font-size:20px;line-height:1.2}
@@ -889,7 +898,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '102';
+const APP_VERSION = '103';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -1516,7 +1525,8 @@ const I18N = {
     today:'النهارده', yesterday:'امبارح', daysAgo:n=>`من ${n} أيام`,
     up:'لفوق', down:'لتحت', back:'رجوع', min:n=>`${n} د`,
     openGif:'افتح الحركة', figLegend:'العضلات اللي بتشتغل', actOpen:'افتح الجلسة', actDelete:'امسح من السجل', longPressHint:'اضغط مطوّل على أي جلسة عشان تمسحها.',
-    histBtn:'التاريخ', histOpen:'تاريخ التمرين والتقدّم', histTitle:n=>`تاريخ: ${n}`, histEmpty:'لسه ما سجّلتش التمرين ده في أي تمرينة.', histNeed2:'محتاج تمرينتين على الأقل عشان يظهر الرسم.', histTimes:'مرات', histPR:'رقم قياسي', hm_e1:'1RM متوقع', hm_maxw:'أتقل وزن', hm_vol:'الحجم', hm_reps:'العدّات', hm_secs:'الوقت', replaceEx:'بدّل التمرين', replaceTitle:n=>`بدّل «${n}» بـ…`, replaceDoneQ:'فيه مجموعات متسجّلة في التمرين ده. تبدّله برضو؟', replacedTo:n=>`اتبدّل بـ ${n}`, imgNoteQ:'إيه المشكلة؟', imgNotePh:'اكتب إيه اللي غلط… مثلاً: الكاميرا من الجنب، الإيد لازم تبقى أوسع', iss_angle:'الزاوية مش مظبوطة', iss_machine:'الجهاز ناقص أو غلط', iss_motion:'الحركة مش كاملة', iss_frames:'محتاج أكتر من لقطتين', iss_shorts:'من غير شورت', iss_wrong:'التمرين نفسه غلط', copyIssues:'انسخ مشاكل الصور', issuesCopied:'اتنسخت — ابعتها لـ Claude', noIssues:'مافيش صور متعلّم عليها مشكلة', issuesHead:n=>`صور فيها مشكلة (${n}):`, routineDeleted:'اتمسح الروتين', lpHint:'اضغط مطوّل على أي روتين عشان تعدّله أو تمسحه', img_done:'الصور خلصت — مستنية مراجعتك', img_ok:'انت اعتمدت الصور دي', img_bad:'علّمت إن الصور فيها مشكلة', img_none:'الصور لسه شغالين عليها', imgApprove:'اعتمد', imgReject:'فيها مشكلة', imgLegend:'الصور:', lg_done:'خلصت', lg_ok:'اعتمدتها', lg_bad:'محتاجة تعديل', muscles:'العضلات', steps:'الخطوات', tip:'نصيحة', ytBtn:'فيديو على يوتيوب', noGuide:'مفيش شرح مكتوب للتمرين ده لأنك ضفته بنفسك. استخدم زرار اليوتيوب اللي تحت.',
+    histBtn:'التاريخ', histOpen:'تاريخ التمرين والتقدّم', histTitle:n=>`تاريخ: ${n}`, histEmpty:'لسه ما سجّلتش التمرين ده في أي تمرينة.', histNeed2:'محتاج تمرينتين على الأقل عشان يظهر الرسم.', histTimes:'مرات', histPR:'رقم قياسي', hm_e1:'1RM متوقع', hm_maxw:'أتقل وزن', hm_vol:'الحجم', hm_reps:'العدّات', hm_secs:'الوقت', replaceEx:'بدّل التمرين', replaceTitle:n=>`بدّل «${n}» بـ…`, replaceDoneQ:'فيه مجموعات متسجّلة في التمرين ده. تبدّله برضو؟', replacedTo:n=>`اتبدّل بـ ${n}`, imgNoteQ:'إيه المشكلة؟', imgNotePh:'اكتب إيه اللي غلط… مثلاً: الكاميرا من الجنب، الإيد لازم تبقى أوسع', iss_angle:'الزاوية مش مظبوطة', iss_machine:'الجهاز ناقص أو غلط', iss_motion:'الحركة مش كاملة', iss_frames:'محتاج أكتر من لقطتين', iss_shorts:'من غير شورت', iss_wrong:'التمرين نفسه غلط', copyIssues:'انسخ مشاكل الصور', issuesCopied:'اتنسخت — ابعتها لـ Claude', noIssues:'مافيش صور متعلّم عليها مشكلة', issuesHead:n=>`صور فيها مشكلة (${n}):`, routineDeleted:'اتمسح الروتين', lpHint:'اضغط مطوّل على روتين عشان تختار وتعدّل أو تمسح أكتر من واحد',
+    selN:n=>`${n} مختار`, delNR:n=>n === 1 ? 'حذف روتين' : n === 2 ? 'حذف روتينين' : `حذف ${n} روتينات`, deleteNRQ:n=>n === 2 ? 'تمسح الروتينين دول؟' : `تمسح ${n} روتينات؟`, routinesDeleted:n=>n === 2 ? 'اتمسح روتينين' : `اتمسح ${n} روتينات`, img_done:'الصور خلصت — مستنية مراجعتك', img_ok:'انت اعتمدت الصور دي', img_bad:'علّمت إن الصور فيها مشكلة', img_none:'الصور لسه شغالين عليها', imgApprove:'اعتمد', imgReject:'فيها مشكلة', imgLegend:'الصور:', lg_done:'خلصت', lg_ok:'اعتمدتها', lg_bad:'محتاجة تعديل', muscles:'العضلات', steps:'الخطوات', tip:'نصيحة', ytBtn:'فيديو على يوتيوب', noGuide:'مفيش شرح مكتوب للتمرين ده لأنك ضفته بنفسك. استخدم زرار اليوتيوب اللي تحت.',
     fArea:'المنطقة', stretchesFor:n=>`إطالات لـ${n}`,
     a_neck:'الرقبة', a_shoulders:'الأكتاف', a_chest:'الصدر', a_back:'الضهر', a_midback:'منتصف الضهر', a_lowback:'أسفل الضهر', a_arms:'الدراع', a_hips:'الحوض ومثنية الفخذ', a_glutes:'الألوية', a_quads:'الأمامية', a_hamstrings:'الخلفية', a_calves:'السمانة',
     importRoutinesQ:(n, names)=>`هيتضاف ${n} روتين لروتيناتك: ${names}. لو عندك روتين بنفس الاسم هيتحدّث. جلساتك وإعداداتك مش هتتأثر.`, routinesImported:n=>`اتضاف ${n} روتين`,
@@ -1585,7 +1595,8 @@ const I18N = {
     today:'Today', yesterday:'Yesterday', daysAgo:n=>`${n} days ago`,
     up:'Move up', down:'Move down', back:'Back', min:n=>`${n} min`,
     openGif:'Open the animation', figLegend:'Muscles working', actOpen:'Open session', actDelete:'Delete from history', longPressHint:'Long-press a session to delete it.',
-    muscles:'Muscles', steps:'Steps', tip:'Tip', ytBtn:'YouTube video', histBtn:'History', histOpen:'Exercise history & progress', histTitle:n=>`History: ${n}`, histEmpty:'You haven’t logged this exercise yet.', histNeed2:'Log it at least twice to see the chart.', histTimes:'Times', histPR:'PR', hm_e1:'Est. 1RM', hm_maxw:'Heaviest', hm_vol:'Volume', hm_reps:'Reps', hm_secs:'Time', replaceEx:'Replace exercise', replaceTitle:n=>`Replace “${n}” with…`, replaceDoneQ:'This exercise has logged sets. Replace it anyway?', replacedTo:n=>`Replaced with ${n}`, imgNoteQ:'What’s wrong?', imgNotePh:'Describe the problem… e.g. camera should be from the side, wider grip', iss_angle:'Wrong angle', iss_machine:'Machine missing or wrong', iss_motion:'Movement incomplete', iss_frames:'Needs more than two frames', iss_shorts:'No shorts', iss_wrong:'Wrong exercise', copyIssues:'Copy image issues', issuesCopied:'Copied — send it to Claude', noIssues:'No images marked as a problem', issuesHead:n=>`Images with problems (${n}):`, routineDeleted:'Routine deleted', lpHint:'Long-press a routine to edit or delete it', img_done:'Images finished by Claude — waiting for your review', img_ok:'You approved these images', img_bad:'You flagged a problem with these images', img_none:'Images still in progress', imgApprove:'Approve', imgReject:'Problem', imgLegend:'Images:', lg_done:'finished', lg_ok:'approved', lg_bad:'needs a fix', noGuide:'No written guide for exercises you added yourself. Use the YouTube button below.',
+    muscles:'Muscles', steps:'Steps', tip:'Tip', ytBtn:'YouTube video', histBtn:'History', histOpen:'Exercise history & progress', histTitle:n=>`History: ${n}`, histEmpty:'You haven’t logged this exercise yet.', histNeed2:'Log it at least twice to see the chart.', histTimes:'Times', histPR:'PR', hm_e1:'Est. 1RM', hm_maxw:'Heaviest', hm_vol:'Volume', hm_reps:'Reps', hm_secs:'Time', replaceEx:'Replace exercise', replaceTitle:n=>`Replace “${n}” with…`, replaceDoneQ:'This exercise has logged sets. Replace it anyway?', replacedTo:n=>`Replaced with ${n}`, imgNoteQ:'What’s wrong?', imgNotePh:'Describe the problem… e.g. camera should be from the side, wider grip', iss_angle:'Wrong angle', iss_machine:'Machine missing or wrong', iss_motion:'Movement incomplete', iss_frames:'Needs more than two frames', iss_shorts:'No shorts', iss_wrong:'Wrong exercise', copyIssues:'Copy image issues', issuesCopied:'Copied — send it to Claude', noIssues:'No images marked as a problem', issuesHead:n=>`Images with problems (${n}):`, routineDeleted:'Routine deleted', lpHint:'Long-press a routine to select, edit or delete several',
+    selN:n=>`${n} selected`, delNR:n=>`Delete ${n} routine${n === 1 ? '' : 's'}`, deleteNRQ:n=>`Delete ${n} routines?`, routinesDeleted:n=>`${n} routines deleted`, img_done:'Images finished by Claude — waiting for your review', img_ok:'You approved these images', img_bad:'You flagged a problem with these images', img_none:'Images still in progress', imgApprove:'Approve', imgReject:'Problem', imgLegend:'Images:', lg_done:'finished', lg_ok:'approved', lg_bad:'needs a fix', noGuide:'No written guide for exercises you added yourself. Use the YouTube button below.',
     fArea:'Area', stretchesFor:n=>`Stretches for ${n}`,
     a_neck:'Neck', a_shoulders:'Shoulders', a_chest:'Chest', a_back:'Back', a_midback:'Mid back', a_lowback:'Lower back', a_arms:'Arms', a_hips:'Hips & hip flexors', a_glutes:'Glutes', a_quads:'Quads', a_hamstrings:'Hamstrings', a_calves:'Calves',
     importRoutinesQ:(n, names)=>`${n} routines will be added: ${names}. A routine with the same name is updated. Your sessions and settings stay as they are.`, routinesImported:n=>`${n} routines added`,
@@ -2235,11 +2246,12 @@ function reorderBlock(items) {
 function viewRoutines() {
   const rs = S.profile.routines;
   return `<div class="view ${S.anim ? 'anim' : ''}"><header class="topbar"><h1>${esc(t('navRoutines'))}</h1>${syncBadge()}</header>
-    ${rs.length ? rs.map(r => `<div class="r-card" data-lpr="${esc(r.id)}"><button class="r-open" data-act="editRoutine" data-id="${esc(r.id)}"><span class="r-name">${esc(r.name)}</span>
+    ${rs.length ? rs.map(r => `<div class="r-card ${S.rsel ? 'sel-mode' : ''} ${S.rsel && S.rsel.has(r.id) ? 'sel' : ''}" data-lpr="${esc(r.id)}" ${S.rsel ? 'data-act="rSelTap"' : ''}>${S.rsel ? `<span class="r-check" aria-hidden="true">${ICON.check}</span>` : ''}<button class="r-open" data-act="editRoutine" data-id="${esc(r.id)}"><span class="r-name">${esc(r.name)}</span>
       <span class="tags">${[...new Set(r.items.map(i => exById(i.exId).g))].map(g => `<span class="tag">${esc(t('g_' + g))}</span>`).join('')}</span>
       <span class="r-ex">${esc(t('exN', r.items.length))} · ${esc(t('setsN', r.items.reduce((a, i) => a + i.sets.length, 0)))}${r.items.length ? ' · ' + esc(r.items.map(i => nameOf(i.exId)).join(SEP())) : ''}</span></button>
       <div class="r-acts"><button class="btn primary sm" data-act="startRoutine" data-id="${esc(r.id)}" ${r.items.length ? '' : 'disabled'}>${esc(t('startR'))}</button><button class="btn sm" data-act="editRoutine" data-id="${esc(r.id)}">${esc(t('edit'))}</button></div></div>`).join('') : `<div class="empty">${esc(t('routinesEmpty'))}</div>`}
-    ${rs.length ? `<span class="muted" style="font-size:12px;margin-top:-6px;text-align:center">${esc(t('lpHint'))}</span>` : ''}
+    ${rs.length && !S.rsel ? `<span class="muted" style="font-size:12px;margin-top:-6px;text-align:center">${esc(t('lpHint'))}</span>` : ''}
+    ${S.rsel ? `<div class="sel-bar" role="toolbar"><button class="btn sm" data-act="rSelCancel">${esc(t('cancel'))}</button><span class="sel-n">${esc(t('selN', S.rsel.size))}</span>${S.rsel.size === 1 ? `<button class="btn sm" data-act="rSelEdit">${esc(t('edit'))}</button>` : ''}<button class="btn sm danger" data-act="rSelDel" ${S.rsel.size ? '' : 'disabled'}>${esc(t('delNR', S.rsel.size))}</button></div><div style="height:64px"></div>` : ''}
     <button class="btn primary block" data-act="newRoutine" ${S.loaded ? '' : 'disabled'}>${esc(t('newRoutine'))}</button>
     <div class="label" style="margin-top:8px">${esc(t('readyR'))}</div>
     <span class="muted" style="font-size:13px;margin-top:-10px">${esc(t('readyHint'))}</span>
@@ -2427,7 +2439,7 @@ function render() {
   if (S.view === 'exercises') fillPicker();
 }
 function softRender() { if (S.view === 'session' || S.view === 'routineEdit' || (document.activeElement && document.activeElement.matches('#app input, #app textarea'))) { setSync(); return; } const y = window.scrollY; render(); window.scrollTo(0, y); }
-function go(view) { S.reorder = false; if (view === 'exercises' && S.pick.target !== 'library') S.pick = { target:'library', q:'', g:null, e:null, a:null, open:null }; S.view = view; if (view !== 'settings') S.exportText = null; S.anim = true; render(); window.scrollTo(0, 0); }
+function go(view) { S.reorder = false; S.rsel = null; if (view === 'exercises' && S.pick.target !== 'library') S.pick = { target:'library', q:'', g:null, e:null, a:null, open:null }; S.view = view; if (view !== 'settings') S.exportText = null; S.anim = true; render(); window.scrollTo(0, 0); }
 
 /* ---------- session logic ---------- */
 // New sets come pre-filled. Working sets take last time's working sets in order; warm-ups take last time's warm-ups.
@@ -2885,6 +2897,7 @@ document.addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
   if (lp.fired && b.dataset.act === 'openSession') { lp.fired = false; return; }
   if (lpr.fired && b.closest('.r-card[data-lpr]')) { lpr.fired = false; return; }
+  if (S.rsel && S.view === 'routines' && b.closest('.r-card[data-lpr]')) { const id = b.closest('.r-card[data-lpr]').dataset.lpr; S.rsel.has(id) ? S.rsel.delete(id) : S.rsel.add(id); if (!S.rsel.size) S.rsel = null; S.anim = false; render(); return; }
   if (sws.swiped) { sws.swiped = false; if (b.closest('.set-wrap') && !b.closest('.set-del')) return; }
   const a = b.dataset.act, i = +b.dataset.i, j = +b.dataset.j;
   const s = cur(), d = S.routineDraft;
@@ -3019,6 +3032,12 @@ document.addEventListener('click', async e => {
       saveProfile(); S.routineDraft = null;
       if (a === 'saveStart') { ensureAudio(); startRoutine(saved); }
       else { go('routines'); toast(t('routineSaved')); }
+      break; }
+    case 'rSelCancel': S.rsel = null; S.anim = false; render(); break;
+    case 'rSelEdit': { const id = S.rsel && [...S.rsel][0]; S.rsel = null; const r = S.profile.routines.find(r => r.id === id); if (r) { S.routineDraft = clone(r); go('routineEdit'); } break; }
+    case 'rSelDel': { if (!S.rsel || !S.rsel.size) break; const ids = new Set(S.rsel), n = ids.size;
+      const names = S.profile.routines.filter(r => ids.has(r.id)).map(r => r.name || '—');
+      if (await ask(n === 1 ? t('deleteRoutineQ', names[0]) : t('deleteNRQ', n), t('del'))) { S.profile.routines = S.profile.routines.filter(r => !ids.has(r.id)); S.rsel = null; saveProfile(); S.anim = false; render(); toast(n === 1 ? t('routineDeleted') : t('routinesDeleted', n)); }
       break; }
     case 'rEditFromSheet': { closeSheet(); const r = S.profile.routines.find(r => r.id === b.dataset.id); if (r) { S.routineDraft = clone(r); go('routineEdit'); } break; }
     case 'rDelFromSheet': { const r = S.profile.routines.find(r => r.id === b.dataset.id); if (!r) break; closeSheet();
@@ -3174,7 +3193,8 @@ document.addEventListener('pointerdown', e => {
   lpr.fired = false;
   const card = e.target.closest('.r-card[data-lpr]'); if (!card || S.view !== 'routines') return;
   Object.assign(lpr, { on:true, x:e.clientX, y:e.clientY }); clearTimeout(lpr.t);
-  lpr.t = setTimeout(() => { if (!lpr.on) return; lpr.on = false; lpr.fired = true; try { navigator.vibrate && navigator.vibrate(30); } catch {} routineActions(card.dataset.lpr); }, 500);
+  lpr.t = setTimeout(() => { if (!lpr.on) return; lpr.on = false; lpr.fired = true; try { navigator.vibrate && navigator.vibrate(30); } catch {}
+    const id = card.dataset.lpr; if (!S.rsel) S.rsel = new Set(); S.rsel.add(id); S.anim = false; render(); }, 500);
 });
 document.addEventListener('pointermove', e => { if (lpr.on && Math.hypot(e.clientX - lpr.x, e.clientY - lpr.y) > 10) { lpr.on = false; clearTimeout(lpr.t); } });
 ['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => { lpr.on = false; clearTimeout(lpr.t); }));
