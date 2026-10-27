@@ -364,6 +364,13 @@ a.btn{text-decoration:none}
 .hist-sets span.ty-w{opacity:.6}
 .hist-note{font-size:13px;color:var(--muted);margin-top:6px}
 .rec[data-act]{cursor:pointer}
+.ir-note{width:100%;display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.ir-note label{font-weight:700;font-size:13px;color:#E5383B}
+.ir-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ir-chips .chip{font-size:12px}
+.ir-note textarea{width:100%;border-radius:12px;border:1.5px solid var(--line,#D5DBE5);padding:10px;font:inherit;font-size:16px;background:var(--surface);color:inherit;resize:vertical}
+.ex-name{all:unset;cursor:pointer;font:inherit;color:inherit;text-align:start}
+.ex-name:active{opacity:.6}
 .img-review{margin:10px 0 6px;display:flex;flex-direction:column;align-items:center;gap:8px}
 .ir-status{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--muted)}
 .ir-status .vbadge{margin:0}
@@ -868,7 +875,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '93';
+const APP_VERSION = '94';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -1486,7 +1493,7 @@ const I18N = {
     today:'النهارده', yesterday:'امبارح', daysAgo:n=>`من ${n} أيام`,
     up:'لفوق', down:'لتحت', back:'رجوع', min:n=>`${n} د`,
     openGif:'افتح الحركة', figLegend:'العضلات اللي بتشتغل', actOpen:'افتح الجلسة', actDelete:'امسح من السجل', longPressHint:'اضغط مطوّل على أي جلسة عشان تمسحها.',
-    histBtn:'التاريخ', histOpen:'تاريخ التمرين والتقدّم', histTitle:n=>`تاريخ: ${n}`, histEmpty:'لسه ما سجّلتش التمرين ده في أي تمرينة.', histNeed2:'محتاج تمرينتين على الأقل عشان يظهر الرسم.', histTimes:'مرات', histPR:'رقم قياسي', hm_e1:'1RM متوقع', hm_maxw:'أتقل وزن', hm_vol:'الحجم', hm_reps:'العدّات', hm_secs:'الوقت', replaceEx:'بدّل التمرين', replaceTitle:n=>`بدّل «${n}» بـ…`, replaceDoneQ:'فيه مجموعات متسجّلة في التمرين ده. تبدّله برضو؟', replacedTo:n=>`اتبدّل بـ ${n}`, img_done:'الصور خلصت — مستنية مراجعتك', img_ok:'انت اعتمدت الصور دي', img_bad:'علّمت إن الصور فيها مشكلة', img_none:'الصور لسه شغالين عليها', imgApprove:'اعتمد', imgReject:'فيها مشكلة', imgLegend:'الصور:', lg_done:'خلصت', lg_ok:'اعتمدتها', lg_bad:'محتاجة تعديل', muscles:'العضلات', steps:'الخطوات', tip:'نصيحة', ytBtn:'فيديو على يوتيوب', noGuide:'مفيش شرح مكتوب للتمرين ده لأنك ضفته بنفسك. استخدم زرار اليوتيوب اللي تحت.',
+    histBtn:'التاريخ', histOpen:'تاريخ التمرين والتقدّم', histTitle:n=>`تاريخ: ${n}`, histEmpty:'لسه ما سجّلتش التمرين ده في أي تمرينة.', histNeed2:'محتاج تمرينتين على الأقل عشان يظهر الرسم.', histTimes:'مرات', histPR:'رقم قياسي', hm_e1:'1RM متوقع', hm_maxw:'أتقل وزن', hm_vol:'الحجم', hm_reps:'العدّات', hm_secs:'الوقت', replaceEx:'بدّل التمرين', replaceTitle:n=>`بدّل «${n}» بـ…`, replaceDoneQ:'فيه مجموعات متسجّلة في التمرين ده. تبدّله برضو؟', replacedTo:n=>`اتبدّل بـ ${n}`, imgNoteQ:'إيه المشكلة؟', imgNotePh:'اكتب إيه اللي غلط… مثلاً: الكاميرا من الجنب، الإيد لازم تبقى أوسع', iss_angle:'الزاوية مش مظبوطة', iss_machine:'الجهاز ناقص أو غلط', iss_motion:'الحركة مش كاملة', iss_frames:'محتاج أكتر من لقطتين', iss_shorts:'من غير شورت', iss_wrong:'التمرين نفسه غلط', copyIssues:'انسخ مشاكل الصور', issuesCopied:'اتنسخت — ابعتها لـ Claude', noIssues:'مافيش صور متعلّم عليها مشكلة', issuesHead:n=>`صور فيها مشكلة (${n}):`, img_done:'الصور خلصت — مستنية مراجعتك', img_ok:'انت اعتمدت الصور دي', img_bad:'علّمت إن الصور فيها مشكلة', img_none:'الصور لسه شغالين عليها', imgApprove:'اعتمد', imgReject:'فيها مشكلة', imgLegend:'الصور:', lg_done:'خلصت', lg_ok:'اعتمدتها', lg_bad:'محتاجة تعديل', muscles:'العضلات', steps:'الخطوات', tip:'نصيحة', ytBtn:'فيديو على يوتيوب', noGuide:'مفيش شرح مكتوب للتمرين ده لأنك ضفته بنفسك. استخدم زرار اليوتيوب اللي تحت.',
     fArea:'المنطقة', stretchesFor:n=>`إطالات لـ${n}`,
     a_neck:'الرقبة', a_shoulders:'الأكتاف', a_chest:'الصدر', a_back:'الضهر', a_lowback:'أسفل الضهر', a_arms:'الدراع', a_hips:'الحوض ومثنية الفخذ', a_glutes:'الألوية', a_quads:'الأمامية', a_hamstrings:'الخلفية', a_calves:'السمانة',
     importRoutinesQ:(n, names)=>`هيتضاف ${n} روتين لروتيناتك: ${names}. لو عندك روتين بنفس الاسم هيتحدّث. جلساتك وإعداداتك مش هتتأثر.`, routinesImported:n=>`اتضاف ${n} روتين`,
@@ -1555,7 +1562,7 @@ const I18N = {
     today:'Today', yesterday:'Yesterday', daysAgo:n=>`${n} days ago`,
     up:'Move up', down:'Move down', back:'Back', min:n=>`${n} min`,
     openGif:'Open the animation', figLegend:'Muscles working', actOpen:'Open session', actDelete:'Delete from history', longPressHint:'Long-press a session to delete it.',
-    muscles:'Muscles', steps:'Steps', tip:'Tip', ytBtn:'YouTube video', histBtn:'History', histOpen:'Exercise history & progress', histTitle:n=>`History: ${n}`, histEmpty:'You haven’t logged this exercise yet.', histNeed2:'Log it at least twice to see the chart.', histTimes:'Times', histPR:'PR', hm_e1:'Est. 1RM', hm_maxw:'Heaviest', hm_vol:'Volume', hm_reps:'Reps', hm_secs:'Time', replaceEx:'Replace exercise', replaceTitle:n=>`Replace “${n}” with…`, replaceDoneQ:'This exercise has logged sets. Replace it anyway?', replacedTo:n=>`Replaced with ${n}`, img_done:'Images finished by Claude — waiting for your review', img_ok:'You approved these images', img_bad:'You flagged a problem with these images', img_none:'Images still in progress', imgApprove:'Approve', imgReject:'Problem', imgLegend:'Images:', lg_done:'finished', lg_ok:'approved', lg_bad:'needs a fix', noGuide:'No written guide for exercises you added yourself. Use the YouTube button below.',
+    muscles:'Muscles', steps:'Steps', tip:'Tip', ytBtn:'YouTube video', histBtn:'History', histOpen:'Exercise history & progress', histTitle:n=>`History: ${n}`, histEmpty:'You haven’t logged this exercise yet.', histNeed2:'Log it at least twice to see the chart.', histTimes:'Times', histPR:'PR', hm_e1:'Est. 1RM', hm_maxw:'Heaviest', hm_vol:'Volume', hm_reps:'Reps', hm_secs:'Time', replaceEx:'Replace exercise', replaceTitle:n=>`Replace “${n}” with…`, replaceDoneQ:'This exercise has logged sets. Replace it anyway?', replacedTo:n=>`Replaced with ${n}`, imgNoteQ:'What’s wrong?', imgNotePh:'Describe the problem… e.g. camera should be from the side, wider grip', iss_angle:'Wrong angle', iss_machine:'Machine missing or wrong', iss_motion:'Movement incomplete', iss_frames:'Needs more than two frames', iss_shorts:'No shorts', iss_wrong:'Wrong exercise', copyIssues:'Copy image issues', issuesCopied:'Copied — send it to Claude', noIssues:'No images marked as a problem', issuesHead:n=>`Images with problems (${n}):`, img_done:'Images finished by Claude — waiting for your review', img_ok:'You approved these images', img_bad:'You flagged a problem with these images', img_none:'Images still in progress', imgApprove:'Approve', imgReject:'Problem', imgLegend:'Images:', lg_done:'finished', lg_ok:'approved', lg_bad:'needs a fix', noGuide:'No written guide for exercises you added yourself. Use the YouTube button below.',
     fArea:'Area', stretchesFor:n=>`Stretches for ${n}`,
     a_neck:'Neck', a_shoulders:'Shoulders', a_chest:'Chest', a_back:'Back', a_lowback:'Lower back', a_arms:'Arms', a_hips:'Hips & hip flexors', a_glutes:'Glutes', a_quads:'Quads', a_hamstrings:'Hamstrings', a_calves:'Calves',
     importRoutinesQ:(n, names)=>`${n} routines will be added: ${names}. A routine with the same name is updated. Your sessions and settings stay as they are.`, routinesImported:n=>`${n} routines added`,
@@ -1728,7 +1735,29 @@ function imgReviewBar(id) {
   return `<div class="img-review" id="imgReview">
     <div class="ir-status st-${st || 'none'}">${st ? vBadge(id) : ''}<span>${esc(t('img_' + (st || 'none')))}</span></div>
     <div class="ir-btns"><button class="ir-ok ${r === 'ok' ? 'on' : ''}" data-act="imgReview" data-id="${esc(id)}" data-v="ok" aria-pressed="${r === 'ok'}">${ICON.verified}<span>${esc(t('imgApprove'))}</span></button>
-    <button class="ir-bad ${r === 'bad' ? 'on' : ''}" data-act="imgReview" data-id="${esc(id)}" data-v="bad" aria-pressed="${r === 'bad'}">${ICON.rejected}<span>${esc(t('imgReject'))}</span></button></div></div>`;
+    <button class="ir-bad ${r === 'bad' ? 'on' : ''}" data-act="imgReview" data-id="${esc(id)}" data-v="bad" aria-pressed="${r === 'bad'}">${ICON.rejected}<span>${esc(t('imgReject'))}</span></button></div>
+    ${r === 'bad' ? `<div class="ir-note"><label for="imgNote">${esc(t('imgNoteQ'))}</label>
+      <div class="ir-chips">${IMG_ISSUES.map(k => `<button class="chip" data-act="imgNoteChip" data-id="${esc(id)}" data-v="${esc(t('iss_' + k))}">${esc(t('iss_' + k))}</button>`).join('')}</div>
+      <textarea id="imgNote" data-id="${esc(id)}" rows="3" placeholder="${esc(t('imgNotePh'))}">${esc(imgNoteOf(id))}</textarea></div>` : ''}</div>`;
+}
+const IMG_ISSUES = ['angle', 'machine', 'motion', 'frames', 'shorts', 'wrong'];
+const imgNoteOf = id => (S.profile.imgReview || {})[id]?.note || '';
+function setImgNote(id, note) {
+  const rv = { ...(S.profile.imgReview || {}) };
+  if (!rv[id]) return;
+  rv[id] = { ...rv[id], note: note.slice(0, 500) };
+  S.profile.imgReview = rv; saveProfile();
+}
+let imgNoteT;
+document.addEventListener('input', e => {
+  if (e.target.id !== 'imgNote') return;
+  clearTimeout(imgNoteT); const el = e.target;
+  imgNoteT = setTimeout(() => setImgNote(el.dataset.id, el.value), 500);
+});
+function imgIssuesText() {
+  const rv = S.profile.imgReview || {};
+  const rows = Object.keys(rv).filter(id => imgReviewOf(id) === 'bad').map(id => `- ${nameOf(id)} (${id})${rv[id].note ? ': ' + rv[id].note.replace(/\s+/g, ' ') : ''}`);
+  return rows.length ? `${t('issuesHead', rows.length)}\n${rows.join('\n')}` : '';
 }
 function openHowTo(id, fromPicker) {
   const ex = exById(id), G = GUIDE[id], L = LANG === 'ar' ? 0 : 1;
@@ -2109,7 +2138,7 @@ function viewRecords() {
 
 function exHead(exId, i, count, prefix) {
   const ex = exById(exId);
-  return `<div class="ex-head"><div class="ttl"><h3>${esc(exName(ex))}${vBadge(exId)}</h3>${exTags(ex)}
+  return `<div class="ex-head"><div class="ttl"><h3><button class="ex-name" data-act="howto" data-ex="${esc(exId)}">${esc(exName(ex))}${vBadge(exId)}</button></h3>${exTags(ex)}
       <div class="ex-meta"><button class="mini acc" data-act="restEdit" data-ex="${esc(exId)}">${ICON.clock}${esc(t('restOf', restLabel(restFor(exId))))}</button>
       <button class="mini" data-act="howto" data-ex="${esc(exId)}">${ICON.play}${esc(t('video'))}</button>
       <button class="mini" data-act="history" data-ex="${esc(exId)}">${ICON.hist.replace('<svg', '<svg width="14" height="14"')}${esc(t('histBtn'))}</button></div></div>
@@ -2306,6 +2335,7 @@ function viewSettings() {
         <span class="muted">${esc(S.storage === 'cloud' ? t('storeCloudHint') : t('storeLocalHint'))}</span>
         <span class="muted">${esc(t('backupHint'))}</span>
         <div class="ex-actions"><button class="btn primary" data-act="export">${esc(t('export'))}</button>
+          <button class="btn" data-act="copyIssues">${esc(t('copyIssues'))}</button>
           <label class="btn filelbl">${esc(t('import'))}<input type="file" id="importFile" accept=".json,application/json,text/plain"></label></div>
         ${S.exportText ? `<span>${esc(t('exportFallback'))}</span><textarea class="mono-box" id="exportBox" readonly>${esc(S.exportText)}</textarea><button class="btn" data-act="copyExport">${esc(t('copy'))}</button>` : ''}
         <textarea class="mono-box" id="importBox" placeholder="${esc(t('pasteImport'))}"></textarea>
@@ -2881,7 +2911,9 @@ document.addEventListener('click', async e => {
     case 'rReplace': openPicker('routine'); S.pick.replace = i; fillPicker(); $('.sheet h2, .sheet .sheet-title') && ($('.sheet h2, .sheet .sheet-title').textContent = t('replaceTitle', nameOf(S.routineDraft.items[i].exId))); break;
     case 'history': openHistory(b.dataset.ex); break;
     case 'histM': S.hist.m = b.dataset.v; fillHistory(); break;
-    case 'imgReview': { const id = b.dataset.id, v = b.dataset.v, rv = { ...(S.profile.imgReview || {}) }; if (imgReviewOf(id) === v) delete rv[id]; else rv[id] = { v, img: PHOTOS[id]?.src[0] || '', t: Date.now() }; S.profile.imgReview = rv; saveProfile(); const box = $('#imgReview'); if (box) box.outerHTML = imgReviewBar(id); if (S.view === 'exercises' && $('#pickList') && !$('.sheet .pick-foot')) fillPicker(); break; }
+    case 'imgNoteChip': { const ta = $('#imgNote'); if (!ta) break; const v = b.dataset.v; if (!ta.value.includes(v)) ta.value = ta.value.trim() ? `${ta.value.trim()}، ${v}` : v; setImgNote(b.dataset.id, ta.value); ta.focus(); break; }
+    case 'copyIssues': { const txt = imgIssuesText(); if (!txt) { toast(t('noIssues')); break; } try { await navigator.clipboard.writeText(txt); toast(t('issuesCopied')); } catch { S.exportText = txt; render(); } break; }
+    case 'imgReview': { const id = b.dataset.id, v = b.dataset.v, rv = { ...(S.profile.imgReview || {}) }; if (imgReviewOf(id) === v) delete rv[id]; else rv[id] = { v, img: PHOTOS[id]?.src[0] || '', t: Date.now() }; S.profile.imgReview = rv; saveProfile(); const box = $('#imgReview'); if (box) box.outerHTML = imgReviewBar(id); if (v === 'bad' && rv[id]) setTimeout(() => $('#imgNote')?.focus(), 50); if (S.view === 'exercises' && $('#pickList') && !$('.sheet .pick-foot')) fillPicker(); break; }
     case 'pickInfo': S.pick.scroll = $('.sheet-body')?.scrollTop || 0; openHowTo(b.dataset.id, true); break;
     case 'pickBack': userCloseSheet(); break;
     case 'pickToggleBack': pickToggle(b.dataset.id); userCloseSheet(); break;
