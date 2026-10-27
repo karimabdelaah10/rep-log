@@ -251,7 +251,13 @@ html,body{touch-action:manipulation}
 .r-card.drop-before::before,.r-card.drop-after::after{content:'';position:absolute;left:8px;right:8px;height:4px;border-radius:4px;background:var(--accent)}
 .r-card.drop-before::before{top:-12px}.r-card.drop-after::after{bottom:-12px}
 body.r-dragging{-webkit-user-select:none;user-select:none;overscroll-behavior:none}
-body.r-dragging .sel-bar{opacity:0;pointer-events:none}
+body.r-dragging .sel-bar{visibility:hidden}
+body.r-dragging .r-card[data-lpr]{padding:14px 16px;gap:0}
+body.r-dragging .r-card[data-lpr] :is(.tags,.r-ex,.r-acts,.r-check){display:none}
+body.r-dragging .r-card[data-lpr] .r-open{padding-inline-end:0;flex-direction:row;align-items:center;gap:8px}
+body.r-dragging .r-card[data-lpr] .r-name{font-size:17px}
+body.r-dragging .r-card.drag-ghost{display:none}
+.r-more{background:var(--accent);color:#fff;border-radius:99px;padding:2px 9px;font-size:13px;font-weight:700}
 .r-open{display:flex;flex-direction:column;gap:8px;text-align:start;width:100%}
 .r-acts{display:flex;gap:8px}.r-acts .btn{flex:1}
 .r-card .r-name{font-family:var(--f-disp);font-weight:800;font-size:20px;line-height:1.2}
@@ -904,7 +910,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '104';
+const APP_VERSION = '105';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -3219,15 +3225,28 @@ function rDragStart() {
   const cards = [...document.querySelectorAll('.r-card[data-lpr]')];
   const el = cards.find(c => c.dataset.lpr === rdrag.id); if (!el) { rdrag.ready = false; return; }
   const sel = S.rsel || new Set([rdrag.id]);
-  Object.assign(rdrag, { on:true, el, cards, sel, others:cards.filter(c => !sel.has(c.dataset.lpr)), to:null, sy0:scrollY, base:el.getBoundingClientRect().top + el.offsetHeight / 2 - rdrag.y0 });
-  el.classList.add('dragging'); cards.forEach(c => { if (c !== el && sel.has(c.dataset.lpr)) c.classList.add('drag-ghost'); });
+  // compact mode: every card collapses to just its name; the other selected cards travel with the dragged one
+  const top0 = el.getBoundingClientRect().top;
   document.body.classList.add('r-dragging');
+  el.classList.add('dragging'); cards.forEach(c => { if (c !== el && sel.has(c.dataset.lpr)) c.classList.add('drag-ghost'); });
+  if (sel.size > 1) { const n = document.createElement('span'); n.className = 'r-more'; n.textContent = '+' + (sel.size - 1); el.querySelector('.r-name')?.after(n); }
+  window.scrollBy(0, el.getBoundingClientRect().top - top0);   // keep the card where the finger is after the list shrinks
+  const r = el.getBoundingClientRect();
+  Object.assign(rdrag, { on:true, el, cards, sel, others:cards.filter(c => !sel.has(c.dataset.lpr)), to:null, c0:r.top + r.height / 2 + scrollY, y:rdrag.y0 });
+  rPlace();
+  const tick = () => {
+    if (!rdrag.on) return;
+    const y = rdrag.y, top = 140, bot = innerHeight - 150;
+    const v = y < top ? -Math.ceil((top - y) / 6) : y > bot ? Math.ceil((y - bot) / 6) : 0;
+    if (v) { const before = scrollY; window.scrollBy(0, v); if (scrollY !== before) rPlace(); }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
 }
-function rDragMove(y) {
-  const d = rdrag;
-  if (y < 90) window.scrollBy(0, -10); else if (y > innerHeight - 170) window.scrollBy(0, 10);
-  d.el.style.transform = `translateY(${y - d.y0 + scrollY - d.sy0}px)`;
-  const mid = y + d.base;  // finger-relative centre of the dragged card (viewport)
+function rDragMove(y) { rdrag.y = y; rPlace(); }
+function rPlace() {
+  const d = rdrag, mid = d.y;   // the dragged card's centre follows the finger
+  d.el.style.transform = `translateY(${mid + scrollY - d.c0}px)`;
   let to = d.others.length;
   for (let k = 0; k < d.others.length; k++) { const r = d.others[k].getBoundingClientRect(); if (mid < r.top + r.height / 2) { to = k; break; } }
   if (to !== d.to) {
