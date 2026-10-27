@@ -159,6 +159,7 @@ html,body{overscroll-behavior-x:none}
 .sets{display:flex;flex-direction:column;gap:7px}
 .set{display:grid;grid-template-columns:30px 1fr 1fr 48px;gap:8px;align-items:center}
 .set.bw{grid-template-columns:30px 1fr 48px}
+.set.nx{grid-template-columns:30px 1fr 1fr}.set.nx.bw{grid-template-columns:30px 1fr}
 .set-wrap{position:relative;overflow:hidden;margin:-4px;padding:4px}
 .set-wrap>.set{position:relative;z-index:1;transition:transform .22s cubic-bezier(.32,.72,0,1);touch-action:pan-y}
 .set-wrap.dragging>.set{transition:none}
@@ -888,7 +889,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '96';
+const APP_VERSION = '97';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -2172,8 +2173,8 @@ function exHead(exId, i, count, prefix) {
     </div></div>`;
 }
 const setNo = (sets, j) => sets[j].t ? t('ty_' + sets[j].t) : String(sets.slice(0, j + 1).filter(y => y.t !== 'w').length);
-function setHeader(md) {
-  return `<div class="set head ${md !== 'wr' ? 'bw' : ''}"><span>${esc(t('setH'))}</span>${md !== 'wr' ? '' : `<span>${esc(t('kg'))}</span>`}<span>${esc(md === 't' ? t('secs') : t('reps'))}</span><span></span></div>`;
+function setHeader(md, nx) {
+  return `<div class="set head ${md !== 'wr' ? 'bw' : ''} ${nx ? 'nx' : ''}"><span>${esc(t('setH'))}</span>${md !== 'wr' ? '' : `<span>${esc(t('kg'))}</span>`}<span>${esc(md === 't' ? t('secs') : t('reps'))}</span>${nx ? '' : '<span></span>'}</div>`;
 }
 
 function viewSession() {
@@ -2255,15 +2256,14 @@ function viewRoutineEdit() {
   const exists = S.profile.routines.some(r => r.id === d.id);
   const cards = d.items.map((it, i) => {
     const ex = exById(it.exId), md = modeOf(it.exId), bw = md !== 'wr';
-    const rows = it.sets.map((x, j) => `<div class="set-wrap" ${it.sets.length <= 1 ? 'data-noswipe' : ''}><button class="set-del" data-act="swDelSet" data-c="r" data-i="${i}" data-j="${j}" tabindex="-1" aria-label="${esc(t('removeThisSet'))}">${ICON.x}</button><div class="set ${bw ? 'bw' : ''} ${S.newKey === `r${i}-${j}` ? 'new' : ''}">
+    const rows = it.sets.map((x, j) => `<div class="set-wrap" ${it.sets.length <= 1 ? 'data-noswipe' : ''}><button class="set-del" data-act="swDelSet" data-c="r" data-i="${i}" data-j="${j}" tabindex="-1" aria-label="${esc(t('removeThisSet'))}">${ICON.x}</button><div class="set nx ${bw ? 'bw' : ''} ${S.newKey === `r${i}-${j}` ? 'new' : ''}">
       <button class="no ${x.t ? 'ty-' + x.t : ''}" data-act="rSetType" data-i="${i}" data-j="${j}" aria-label="${esc(t('setTypeA'))}">${esc(setNo(it.sets, j))}</button>
       ${bw ? '' : `<input id="rw-${i}-${j}" type="text" inputmode="decimal" autocomplete="off" data-f="rw" data-i="${i}" data-j="${j}" value="${esc(fmtW(x.w))}" placeholder="–" aria-label="${esc(t('kg'))} ${j + 1}">`}
       <input id="rr-${i}-${j}" type="text" inputmode="numeric" autocomplete="off" data-f="rr" data-i="${i}" data-j="${j}" value="${x.r ?? ''}" placeholder="–" aria-label="${esc(md === 't' ? t('secs') : t('reps'))} ${j + 1}">
-      <button class="xbtn" data-act="rDelSet" data-i="${i}" data-j="${j}" aria-label="${esc(t('removeThisSet'))}" ${it.sets.length <= 1 ? 'disabled' : ''}>${ICON.x}</button>
     </div></div>`).join('');
     return `<article class="ex ${S.newKey === 'rex' + i ? 'new' : ''}">
       ${exHead(it.exId, i, d.items.length, 'r')}
-      <div class="sets">${setHeader(md)}${rows}</div>
+      <div class="sets">${setHeader(md, true)}${rows}</div>
       <div class="ex-actions"><button class="btn sm" data-act="rAddSet" data-i="${i}">${esc(t('addSet'))}</button></div>
     </article>`;
   }).join('');
