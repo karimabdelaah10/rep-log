@@ -910,7 +910,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '105';
+const APP_VERSION = '106';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -2255,6 +2255,24 @@ function reorderBlock(items) {
     <p class="hint">${esc(t('reorderHint'))}</p>
     <div class="ro-list">${items.map((it, i) => `<div class="ro-item" data-i="${i}"><span class="no">${i + 1}</span><span class="nm">${esc(nameOf(it.exId))}${vBadge(it.exId)}</span><span class="grip">${ICON.grip}</span></div>`).join('')}</div></section>`;
 }
+function selBarHTML() {
+  return `<div class="sel-bar" role="toolbar"><button class="btn sm" data-act="rSelCancel">${esc(t('cancel'))}</button><span class="sel-n">${esc(t('selN', S.rsel.size))}</span>${S.rsel.size === 1 ? `<button class="btn sm" data-act="rSelEdit">${esc(t('edit'))}</button>` : ''}<button class="btn sm danger" data-act="rSelDel" ${S.rsel.size ? '' : 'disabled'}>${esc(t('delNR', S.rsel.size))}</button></div><div class="sel-spacer" style="height:64px"></div>`;
+}
+// Update selection marks in place (no re-render): a re-render would replace the card under the finger
+// and the browser would then drop the touch, breaking long-press → drag.
+function rSelPaint() {
+  const on = !!S.rsel;
+  document.querySelectorAll('.r-card[data-lpr]').forEach(c => {
+    c.classList.toggle('sel-mode', on); c.classList.toggle('sel', on && S.rsel.has(c.dataset.lpr));
+    if (on) c.dataset.act = 'rSelTap'; else delete c.dataset.act;
+    let ck = c.querySelector(':scope > .r-check');
+    if (on && !ck) { ck = document.createElement('span'); ck.className = 'r-check'; ck.setAttribute('aria-hidden', 'true'); ck.innerHTML = ICON.check; c.prepend(ck); }
+    if (!on && ck) ck.remove();
+  });
+  document.querySelectorAll('.sel-bar, .sel-spacer').forEach(x => x.remove());
+  const view = document.querySelector('.view');
+  if (on && view) view.insertAdjacentHTML('beforeend', selBarHTML());
+}
 function viewRoutines() {
   const rs = S.profile.routines;
   return `<div class="view ${S.anim ? 'anim' : ''}"><header class="topbar"><h1>${esc(t('navRoutines'))}</h1>${syncBadge()}</header>
@@ -2263,7 +2281,7 @@ function viewRoutines() {
       <span class="r-ex">${esc(t('exN', r.items.length))} · ${esc(t('setsN', r.items.reduce((a, i) => a + i.sets.length, 0)))}${r.items.length ? ' · ' + esc(r.items.map(i => nameOf(i.exId)).join(SEP())) : ''}</span></button>
       <div class="r-acts"><button class="btn primary sm" data-act="startRoutine" data-id="${esc(r.id)}" ${r.items.length ? '' : 'disabled'}>${esc(t('startR'))}</button><button class="btn sm" data-act="editRoutine" data-id="${esc(r.id)}">${esc(t('edit'))}</button></div></div>`).join('') : `<div class="empty">${esc(t('routinesEmpty'))}</div>`}
     ${rs.length && !S.rsel ? `<span class="muted" style="font-size:12px;margin-top:-6px;text-align:center">${esc(t('lpHint'))}</span>` : ''}
-    ${S.rsel ? `<div class="sel-bar" role="toolbar"><button class="btn sm" data-act="rSelCancel">${esc(t('cancel'))}</button><span class="sel-n">${esc(t('selN', S.rsel.size))}</span>${S.rsel.size === 1 ? `<button class="btn sm" data-act="rSelEdit">${esc(t('edit'))}</button>` : ''}<button class="btn sm danger" data-act="rSelDel" ${S.rsel.size ? '' : 'disabled'}>${esc(t('delNR', S.rsel.size))}</button></div><div style="height:64px"></div>` : ''}
+    ${S.rsel ? selBarHTML() : ''}
     <button class="btn primary block" data-act="newRoutine" ${S.loaded ? '' : 'disabled'}>${esc(t('newRoutine'))}</button>
     <div class="label" style="margin-top:8px">${esc(t('readyR'))}</div>
     <span class="muted" style="font-size:13px;margin-top:-10px">${esc(t('readyHint'))}</span>
@@ -3206,7 +3224,7 @@ document.addEventListener('pointerdown', e => {
   const card = e.target.closest('.r-card[data-lpr]'); if (!card || S.view !== 'routines') return;
   Object.assign(lpr, { on:true, x:e.clientX, y:e.clientY }); clearTimeout(lpr.t);
   lpr.t = setTimeout(() => { if (!lpr.on) return; lpr.on = false; lpr.fired = true; try { navigator.vibrate && navigator.vibrate(30); } catch {}
-    const id = card.dataset.lpr; const fresh = !S.rsel; if (!S.rsel) S.rsel = new Set(); S.rsel.add(id); S.anim = false; render();
+    const id = card.dataset.lpr; const fresh = !S.rsel; if (!S.rsel) S.rsel = new Set(); S.rsel.add(id); rSelPaint();
     // still holding: moving now drags the selected routine(s) to a new place
     Object.assign(rdrag, { ready:true, on:false, id, fresh, y0:lpr.lastY ?? lpr.y });
   }, 500);
@@ -3217,7 +3235,7 @@ document.addEventListener('pointermove', e => {
   if (rdrag.ready && !rdrag.on && Math.abs(e.clientY - rdrag.y0) > 6) rDragStart();
   if (rdrag.on) rDragMove(e.clientY);
 });
-['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => { lpr.on = false; clearTimeout(lpr.t); if (rdrag.on) rDragEnd(); rdrag.ready = false; }));
+['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => { lpr.on = false; clearTimeout(lpr.t); if (rdrag.on) rDragEnd(ev === 'pointercancel'); rdrag.ready = false; }));
 /* drag to reorder routines (one or all selected) */
 const rdrag = { ready:false, on:false };
 document.addEventListener('touchmove', e => { if (rdrag.ready || rdrag.on) e.preventDefault(); }, { passive:false });
@@ -3227,6 +3245,7 @@ function rDragStart() {
   const sel = S.rsel || new Set([rdrag.id]);
   // compact mode: every card collapses to just its name; the other selected cards travel with the dragged one
   const top0 = el.getBoundingClientRect().top;
+  document.querySelector('.view.anim')?.classList.remove('anim');   // entry animation (fill: both) would pin transform
   document.body.classList.add('r-dragging');
   el.classList.add('dragging'); cards.forEach(c => { if (c !== el && sel.has(c.dataset.lpr)) c.classList.add('drag-ghost'); });
   if (sel.size > 1) { const n = document.createElement('span'); n.className = 'r-more'; n.textContent = '+' + (sel.size - 1); el.querySelector('.r-name')?.after(n); }
@@ -3255,9 +3274,9 @@ function rPlace() {
     try { navigator.vibrate && navigator.vibrate(8); } catch {}
   }
 }
-function rDragEnd() {
+function rDragEnd(cancelled) {
   const d = rdrag; d.on = false; document.body.classList.remove('r-dragging');
-  if (d.to != null) {
+  if (!cancelled && d.to != null) {
     const rs = S.profile.routines, moving = rs.filter(r => d.sel.has(r.id)), rest = rs.filter(r => !d.sel.has(r.id));
     const otherIds = d.others.map(c => c.dataset.lpr), anchor = otherIds[d.to];
     const at = anchor == null ? rest.length : rest.findIndex(r => r.id === anchor);
