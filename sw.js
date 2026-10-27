@@ -1,6 +1,6 @@
 // Network-first for the app page (so updates show on the next open), cache fallback when offline.
 // Icons and fonts: cache-first. Install bypasses the HTTP cache so a new version never caches the old page.
-const CACHE = 'rep-log-v103';
+const CACHE = 'rep-log-v104';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(SHELL.map(u => fetch(new Request(u, { cache:'reload' })).then(r => r.ok && c.put(u, r))))).then(() => self.skipWaiting()));
