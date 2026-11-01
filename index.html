@@ -379,6 +379,10 @@ a.btn{text-decoration:none}
 .pick-item{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border-radius:14px;text-align:start;width:100%;box-shadow:var(--shadow);transition:transform .12s}
 .pick-item:active{transform:scale(.98)}
 .pick-item .nm{flex:1;min-width:0;font-weight:500}
+.pi-txt{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;column-gap:10px;row-gap:3px}
+.pi-txt .nm{flex:1 1 auto}
+.pick-item .pi-txt small{display:block;margin-inline-start:auto;flex:0 1 auto;max-width:100%;text-align:end;font-size:13px;line-height:1.35}
+.pick-item .pi-txt small .hm{display:inline-flex;vertical-align:-2px;margin-inline-end:4px}
 .vbadge{display:inline-flex;vertical-align:-2px;margin-inline-start:5px}
 .vbadge.st-ok .vb polygon{fill:#16A34A;stroke:#16A34A}
 .hist-recs{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:8px;margin-bottom:12px}
@@ -1029,7 +1033,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '126';
+const APP_VERSION = '127';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -3007,7 +3011,7 @@ function fillPicker() {
   const coll = new Intl.Collator(LANG === 'en' ? 'en' : 'ar', { sensitivity: 'base', numeric: true });
   const abc = arr => arr.sort((x, y) => coll.compare(exName(x), exName(y)));
   const item = (ex, sub) => {
-    const btn = `<button class="pick-item ${inNow.has(ex.id) ? 'in' : ''}" data-act="pick" data-id="${esc(ex.id)}">${multi ? `<span class="ck">${sel.includes(ex.id) ? sel.indexOf(ex.id) + 1 : ''}</span>` : ''}<span class="nm">${esc(exName(ex))}${vBadge(ex.id)}${lvDots(levelOf(ex))}</span><small>${homeOk(ex) ? `<span class="hm" title="${esc(t('atHome'))}">${ICON.home.replace('<svg', '<svg width="13" height="13"')}</span>` : ''}${esc(inNow.has(ex.id) ? t('inSession') : sub)}</small></button>`;
+    const btn = `<button class="pick-item ${inNow.has(ex.id) ? 'in' : ''}" data-act="pick" data-id="${esc(ex.id)}">${multi ? `<span class="ck">${sel.includes(ex.id) ? sel.indexOf(ex.id) + 1 : ''}</span>` : ''}<span class="pi-txt"><span class="nm">${esc(exName(ex))}${vBadge(ex.id)}${lvDots(levelOf(ex))}</span><small>${homeOk(ex) ? `<span class="hm" title="${esc(t('atHome'))}">${ICON.home.replace('<svg', '<svg width="13" height="13"')}</span>` : ''}<span class="sb">${esc(inNow.has(ex.id) ? t('inSession') : sub)}</span></small></span></button>`;
     return multi ? `<div class="pick-row ${sel.includes(ex.id) ? 'sel' : ''}" data-id="${esc(ex.id)}">${btn}<button class="pick-info" data-act="pickInfo" data-id="${esc(ex.id)}" aria-label="${esc(t('details'))}">${ICON.info}</button></div>` : btn;
   };
   const textOk = ex => !query || [ex.ar, ex.en, ex.name].some(n => n && n.toLowerCase().includes(query));
