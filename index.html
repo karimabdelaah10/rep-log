@@ -1029,7 +1029,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '125';
+const APP_VERSION = '126';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -1984,6 +1984,11 @@ function applyRoutinePatches(p) {
       r.items.splice(at >= 0 ? at + 1 : r.items.length, 0, { exId:P.exId, sets:P.sets.map(n => ({ w:null, r:n })) });
     }
     done.add(P.key);
+  }
+  // 2026-11-01 (Karim): every image he approved goes back to "needs review"; rejected ones stay rejected
+  if (!done.has('img-ok-reset-1')) {
+    if (p.imgReview) for (const k of Object.keys(p.imgReview)) if (p.imgReview[k] && p.imgReview[k].v === 'ok') delete p.imgReview[k];
+    done.add('img-ok-reset-1');
   }
   p.applied = [...done];
   return p;
