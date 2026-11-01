@@ -1029,7 +1029,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '124';
+const APP_VERSION = '125';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -1751,7 +1751,7 @@ const I18N = {
     sessionNote:'ملاحظات الجلسة', notePh:'إزاي كان التمرين النهارده؟', exNotePh:'ملاحظة على التمرين ده',
     addSet:'+ مجموعة', removeSet:'− آخر مجموعة', note:'ملاحظة', addExercise:'+ أضف تمرين',
     last:'آخر مرة', noLast:'أول مرة تسجّل التمرين ده', plan:'الهدف',
-    rest:'راحة', skip:'تخطّي', restDone:'خلصت الراحة', restAgo:n=>`من ${n}`, restMore:'ريّح كمان', restMoreQ:'عاوز تريّح قد إيه كمان؟', soundL:'صوت نهاية الراحة', sBell:'جرس الحلبة', sBeep:'بيب', sOff:'من غير صوت', soundTest:'جرّب الصوت', readyR:'روتينات جاهزة', readyHint:'ابدأها على طول، أو انسخها لروتيناتك وعدّل فيها.', tplMob:'إحماء وموبيليتي', tplStr:'إطالات', tplCore:'بطن وكور', tplPain:'برامج لتخفيف الآلام', tplMin:n=>`حوالي ${n} د`, tplCopy:'انسخ', tplCopied:'اتنسخ — عدّل واحفظ', fLevel:'المستوى', lv_1:'مبتدئ', lv_2:'متوسط', lv_3:'متقدم', fHome:'المكان', homeAll:'الجيم والبيت', homeOnly:'ينفع في البيت', homeKitL:'الأدوات اللي عندك في البيت', homeKitHint:'تمارين وزن الجسم بتظهر دايمًا في «ينفع في البيت». علّم على الأدوات اللي عندك علشان تظهر تمارينها كمان.', k_dumbbell:'دمبلز', k_kettlebell:'كيتل بل', k_band:'أستك مقاومة', k_bench:'بنش', k_pullup_bar:'بار عقلة', k_barbell:'بار وأوزان', k_ab_wheel:'عجلة بطن', k_foam_roller:'فوم رولر', k_dip_bars:'متوازي ديبس', k_rings:'حلق جمباز', fCali:'النوع', caliAll:'كل التمارين', caliOnly:'كالستينكس', tplCal:'كالستينكس', caliTag:'كالستينكس', g_mobility:'موبيليتي', a_knees:'الركبة', a_ankles:'الكاحل', a_wrists:'الرسغ', atHome:'ينفع في البيت', atHomeNeeds:n=>`ينفع في البيت (محتاج: ${n})`, gymOnly:'جيم بس', homeMissing:n=>`ينفع في البيت لو عندك: ${n}`, rsSave:'احفظ للتمرين ده', rsSaved:'اتحفظت الراحة للتمرين ده', rsDef:'الافتراضي', liveGo:'كمّل', toSession:'افتح التمرين', rsNow:n=>`العداد الشغال هيتظبط على ${n}`,
+    rest:'راحة', skip:'تخطّي', restDone:'خلصت الراحة', restAgo:n=>`من ${n}`, restMore:'ريّح كمان', restMoreQ:'عاوز تريّح قد إيه كمان؟', restStartA:'شغّل عداد راحة', restStartQ:'عداد راحة', restStartGo:'ابدأ العداد', soundL:'صوت نهاية الراحة', sBell:'جرس الحلبة', sBeep:'بيب', sOff:'من غير صوت', soundTest:'جرّب الصوت', readyR:'روتينات جاهزة', readyHint:'ابدأها على طول، أو انسخها لروتيناتك وعدّل فيها.', tplMob:'إحماء وموبيليتي', tplStr:'إطالات', tplCore:'بطن وكور', tplPain:'برامج لتخفيف الآلام', tplMin:n=>`حوالي ${n} د`, tplCopy:'انسخ', tplCopied:'اتنسخ — عدّل واحفظ', fLevel:'المستوى', lv_1:'مبتدئ', lv_2:'متوسط', lv_3:'متقدم', fHome:'المكان', homeAll:'الجيم والبيت', homeOnly:'ينفع في البيت', homeKitL:'الأدوات اللي عندك في البيت', homeKitHint:'تمارين وزن الجسم بتظهر دايمًا في «ينفع في البيت». علّم على الأدوات اللي عندك علشان تظهر تمارينها كمان.', k_dumbbell:'دمبلز', k_kettlebell:'كيتل بل', k_band:'أستك مقاومة', k_bench:'بنش', k_pullup_bar:'بار عقلة', k_barbell:'بار وأوزان', k_ab_wheel:'عجلة بطن', k_foam_roller:'فوم رولر', k_dip_bars:'متوازي ديبس', k_rings:'حلق جمباز', fCali:'النوع', caliAll:'كل التمارين', caliOnly:'كالستينكس', tplCal:'كالستينكس', caliTag:'كالستينكس', g_mobility:'موبيليتي', a_knees:'الركبة', a_ankles:'الكاحل', a_wrists:'الرسغ', atHome:'ينفع في البيت', atHomeNeeds:n=>`ينفع في البيت (محتاج: ${n})`, gymOnly:'جيم بس', homeMissing:n=>`ينفع في البيت لو عندك: ${n}`, rsSave:'احفظ للتمرين ده', rsSaved:'اتحفظت الراحة للتمرين ده', rsDef:'الافتراضي', liveGo:'كمّل', toSession:'افتح التمرين', rsNow:n=>`العداد الشغال هيتظبط على ${n}`,
     discard:'إلغاء الجلسة', discardQ:'تلغي الجلسة دي؟ كل اللي اتسجل فيها هيتمسح.',
     deleteSession:'امسح الجلسة', deleteSessionQ:'تمسح الجلسة دي من السجل؟',
     emptyFinishQ:'مفيش مجموعات متسجلة. تلغي الجلسة؟',
@@ -1821,7 +1821,7 @@ const I18N = {
     sessionNote:'Session notes', notePh:'How did it go today?', exNotePh:'Note for this exercise',
     addSet:'+ Set', removeSet:'− Last set', note:'Note', addExercise:'+ Add exercise',
     last:'Last time', noLast:'First time logging this one', plan:'Plan',
-    rest:'Rest', skip:'Skip', restDone:'Rest is over', restAgo:n=>`${n} ago`, restMore:'Rest more', restMoreQ:'How much longer do you want to rest?', soundL:'End-of-rest sound', sBell:'Boxing bell', sBeep:'Beep', sOff:'No sound', soundTest:'Test sound', readyR:'Ready-made routines', readyHint:'Start one right away, or copy it to your routines and tweak it.', tplMob:'Warm-ups & mobility', tplStr:'Stretching', tplCore:'Abs & core', tplPain:'Pain relief programs', tplMin:n=>`~${n} min`, tplCopy:'Copy', tplCopied:'Copied — edit and save', fLevel:'Level', lv_1:'Beginner', lv_2:'Intermediate', lv_3:'Advanced', fHome:'Where', homeAll:'Gym and home', homeOnly:'Doable at home', homeKitL:'Equipment you have at home', homeKitHint:'Bodyweight exercises always show under “Doable at home”. Tick the equipment you own to include their exercises too.', k_dumbbell:'Dumbbells', k_kettlebell:'Kettlebell', k_band:'Resistance band', k_bench:'Bench', k_pullup_bar:'Pull-up bar', k_barbell:'Barbell & plates', k_ab_wheel:'Ab wheel', k_foam_roller:'Foam roller', k_dip_bars:'Dip bars', k_rings:'Gymnastic rings', fCali:'Type', caliAll:'All exercises', caliOnly:'Calisthenics', tplCal:'Calisthenics', caliTag:'Calisthenics', g_mobility:'Mobility', a_knees:'Knees', a_ankles:'Ankles', a_wrists:'Wrists', atHome:'Doable at home', atHomeNeeds:n=>`Doable at home (needs: ${n})`, gymOnly:'Gym only', homeMissing:n=>`Doable at home if you have: ${n}`, rsSave:'Save for this exercise', rsSaved:'Rest saved for this exercise', rsDef:'Default', liveGo:'Resume', toSession:'Open workout', rsNow:n=>`The running timer will be set to ${n}`,
+    rest:'Rest', skip:'Skip', restDone:'Rest is over', restAgo:n=>`${n} ago`, restMore:'Rest more', restMoreQ:'How much longer do you want to rest?', restStartA:'Start a rest timer', restStartQ:'Rest timer', restStartGo:'Start timer', soundL:'End-of-rest sound', sBell:'Boxing bell', sBeep:'Beep', sOff:'No sound', soundTest:'Test sound', readyR:'Ready-made routines', readyHint:'Start one right away, or copy it to your routines and tweak it.', tplMob:'Warm-ups & mobility', tplStr:'Stretching', tplCore:'Abs & core', tplPain:'Pain relief programs', tplMin:n=>`~${n} min`, tplCopy:'Copy', tplCopied:'Copied — edit and save', fLevel:'Level', lv_1:'Beginner', lv_2:'Intermediate', lv_3:'Advanced', fHome:'Where', homeAll:'Gym and home', homeOnly:'Doable at home', homeKitL:'Equipment you have at home', homeKitHint:'Bodyweight exercises always show under “Doable at home”. Tick the equipment you own to include their exercises too.', k_dumbbell:'Dumbbells', k_kettlebell:'Kettlebell', k_band:'Resistance band', k_bench:'Bench', k_pullup_bar:'Pull-up bar', k_barbell:'Barbell & plates', k_ab_wheel:'Ab wheel', k_foam_roller:'Foam roller', k_dip_bars:'Dip bars', k_rings:'Gymnastic rings', fCali:'Type', caliAll:'All exercises', caliOnly:'Calisthenics', tplCal:'Calisthenics', caliTag:'Calisthenics', g_mobility:'Mobility', a_knees:'Knees', a_ankles:'Ankles', a_wrists:'Wrists', atHome:'Doable at home', atHomeNeeds:n=>`Doable at home (needs: ${n})`, gymOnly:'Gym only', homeMissing:n=>`Doable at home if you have: ${n}`, rsSave:'Save for this exercise', rsSaved:'Rest saved for this exercise', rsDef:'Default', liveGo:'Resume', toSession:'Open workout', rsNow:n=>`The running timer will be set to ${n}`,
     discard:'Discard session', discardQ:'Discard this session? Everything logged in it will be deleted.',
     deleteSession:'Delete session', deleteSessionQ:'Delete this session from your history?',
     emptyFinishQ:'No sets logged. Discard this session?',
@@ -1947,6 +1947,7 @@ function normalizeProfile(p) {
   return applyRoutinePatches({
     lang: p.lang === 'en' ? 'en' : 'ar',
     restSec: Number(p.restSec) > 0 ? Number(p.restSec) : d.restSec,
+    ...(Number(p.restPick) > 0 ? { restPick: Math.min(1800, Number(p.restPick)) } : {}),
     sound: ['bell','beep','off'].includes(p.sound) ? p.sound : d.sound,
     homeKit: Array.isArray(p.homeKit) ? p.homeKit.filter(k => HOME_KIT.includes(k)) : [],
     // review is tied to the image it was made on: { v:'ok'|'bad', img:<first frame path> }; a new image means a fresh review
@@ -2461,7 +2462,7 @@ function viewSession() {
       <button class="iconbtn" data-act="leaveSession" data-back aria-label="${esc(t('back'))}">${ICON.back}</button>
       <div class="t-main"><div class="t-title">${esc(s.routineName || t('freeSession'))}</div>
         <div class="t-sub">${esc(fmtDate(s.startedAt, { weekday:'short', day:'numeric', month:'short' }))} · <span id="elapsed">${esc(hmm((live ? Date.now() : s.endedAt) - s.startedAt))}</span></div></div>
-      ${live ? `<button class="btn primary sm" data-act="finish">${esc(t('finish'))}</button>` : `<button class="btn sm" data-act="leaveSession">${esc(t('done'))}</button>`}
+      ${live ? `<button class="iconbtn" data-act="restPick" aria-label="${esc(t('restStartA'))}" title="${esc(t('restStartA'))}">${ICON.clock}</button><button class="btn primary sm" data-act="finish">${esc(t('finish'))}</button>` : `<button class="btn sm" data-act="leaveSession">${esc(t('done'))}</button>`}
     </header>
     <textarea class="note-area" id="sessNote" data-f="snote" rows="1" placeholder="${esc(t('notePh'))}" aria-label="${esc(t('sessionNote'))}">${esc(s.notes)}</textarea>
     ${s.items.length && !s.items.some(it => it.sets.some(x => x.t)) ? `<p class="hint">${esc(t('setTypeHint'))}</p>` : ''}
@@ -2900,6 +2901,10 @@ function openRestSheet(exId) {
     <button class="btn primary" data-act="rsSave">${esc(t('rsSave'))}</button>`);
   rsPaint();
 }
+function rpPaint() {
+  const el = $('#rpVal'); if (el) el.textContent = mmss(S.rp || 0);
+  document.querySelectorAll('#rpChips .chip').forEach(c => c.setAttribute('aria-pressed', String(+c.dataset.v === S.rp)));
+}
 function rsPaint() {
   const R = S.rs; if (!R) return; const v = R.v ?? R.def;
   const el = $('#rsVal'); if (el) el.textContent = v ? mmss(v) : t('restOff');
@@ -3256,6 +3261,14 @@ document.addEventListener('click', async e => {
     case 'restMore': { ensureAudio(); const opts = [15, 30, 45, 60, 90, 120, 180, 300];
       openSheet(t('restMoreQ'), `<div class="rest-pick">${opts.map(n => `<button data-act="restAgain" data-s="${n}">${esc(restLabel(n))}</button>`).join('')}</div>`); break; }
     case 'restAgain': closeSheet(); ensureAudio(); startTimer(+b.dataset.s, timer.exId); break;
+    case 'restPick': { ensureAudio(); S.rp = Math.max(5, S.profile.restPick || S.profile.restSec || 90); const opts = [30, 45, 60, 90, 120, 150, 180, 240, 300];
+      openSheet(t('restStartQ'), `<div class="rs-val" id="rpVal"></div>
+        <div class="rs-step"><button data-act="rpAdj" data-d="-15">−15</button><button data-act="rpAdj" data-d="-5">−5</button><button data-act="rpAdj" data-d="5">+5</button><button data-act="rpAdj" data-d="15">+15</button></div>
+        <div class="chips" id="rpChips">${opts.map(o => `<button class="chip" data-act="rpSet" data-v="${o}">${esc(restLabel(o))}</button>`).join('')}</div>
+        <button class="btn primary" data-act="rpGo">${esc(t('restStartGo'))}</button>`); rpPaint(); break; }
+    case 'rpAdj': S.rp = Math.min(1800, Math.max(5, (S.rp || 60) + +b.dataset.d)); rpPaint(); break;
+    case 'rpSet': S.rp = +b.dataset.v; rpPaint(); break;
+    case 'rpGo': { const v = S.rp || 60; S.profile.restPick = v; saveProfile(); closeSheet(); ensureAudio(); startTimer(v, null); break; }
     case 'setSound': S.profile.sound = b.dataset.v; saveProfile(); render(); ensureAudio(); restEndSound(); break;
     case 'testSound': ensureAudio(); restEndSound(); break;
     case 'sw': ensureAudio(); if (sw.on && sw.sid === s.id && sw.i === i && sw.j === j) swStop(false); else swStart(s, i, j); break;
