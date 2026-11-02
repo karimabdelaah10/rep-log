@@ -1042,7 +1042,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '135';
+const APP_VERSION = '136';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -1546,9 +1546,9 @@ const PRESETS = [
   ["m_forearm_rock", "mobility", "bodyweight", "هزّة الساعدين (من الطفل لأبو الهول)", "Forearm Rock (Child to Sphinx)"],
   ["side_plank_thread", "core", "bodyweight", "بلانك جانبي مع لضم الإبرة", "Side Plank Thread the Needle"],
   ["m_prone_w_hold", "mobility", "bodyweight", "ثبات W على البطن", "Prone W Hold", "t"],
-  ["m_stick_prone_pd", "mobility", "other", "سحب العصاية على البطن", "Prone Dowel Pulldown"],
-  ["m_stick_prone_rot", "mobility", "other", "الكتاب المفتوح على البطن بالعصاية", "Prone Dowel Open Book"],
-  ["m_stick_prone_tilt", "mobility", "other", "سحب العصاية بالتبادل على البطن", "Prone Dowel Alternating Pulldown"],
+  ["m_stick_prone_pd", "mobility", "other", "سحب اللاتس على البطن بالعصاية", "Prone Lat Pulldown (Dowel)"],
+  ["m_stick_prone_rot", "mobility", "other", "لف منتصف الضهر على البطن بالعصاية", "Prone Thoracic Rotation (Dowel)"],
+  ["m_stick_prone_tilt", "mobility", "other", "سحب اللاتس بالتبادل على البطن بالعصاية", "Prone Alternating Lat Pulldown (Dowel)"],
 ].map(([id,g,e,ar,en,m]) => ({id, g, e, ar, en, ...(m ? { m } : {})}));
 const PRESET_MAP = new Map(PRESETS.map(p => [p.id, p]));
 /* difficulty: 1 beginner · 2 intermediate · 3 advanced */
