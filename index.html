@@ -1052,7 +1052,7 @@ const EXT_GIFS = {};
 /* ---------- catalog ---------- */
 const GROUPS = ['chest','back','shoulders','legs','arms','core','stretch','mobility','other'];
 const EQUIP = ['barbell','dumbbell','cable','machine','kettlebell','band','bodyweight','other'];
-const APP_VERSION = '158';
+const APP_VERSION = '159';
 const APP_MAJOR = 0; // stays 0 until phase one is finished; shown as 0.<build>
 const MODES = ['wr','r','t'];
 const SET_TYPES = ['w','f','d'];
@@ -1812,7 +1812,7 @@ const I18N = {
     discard:'إلغاء الجلسة', discardQ:'تلغي الجلسة دي؟ كل اللي اتسجل فيها هيتمسح.',
     deleteSession:'امسح الجلسة', deleteSessionQ:'تمسح الجلسة دي من السجل؟',
     emptyFinishQ:'مفيش مجموعات متسجلة. تلغي الجلسة؟',
-    removeExQ:n=>`تشيل «${n}»؟`, saved:'الجلسة اتحفظت 💪', deleted:'اتمسحت',
+    removeExQ:n=>`تشيل «${n}»؟`, saved:'الجلسة اتحفظت 💪', autoClosed:'الحصة اتقفلت لوحدها (مافيش تسجيل بقاله ساعة) واتحفظت لحد آخر مجموعة', deleted:'اتمسحت',
     cancel:'رجوع', del:'امسح', yes:'أيوه', remove:'شيل',
     search:'دوّر على تمرين', addCustom:n=>`+ أضف «${n}»`, pickTitle:'اختار تمارين', inSession:'موجود', addSel:n=>n === 1 ? 'أضف تمرين واحد' : n === 2 ? 'أضف تمرينين' : `أضف ${n} تمارين`, pickHint:'دوس على التمرين عشان تختاره، أو على ⓘ عشان تشوف شرحه.', clearSel:'مسح', details:'التفاصيل', selectThis:'اختار التمرين ده', unselectThis:'شيله من الاختيار', backToList:'رجوع للقائمة', addedN:n=>`اتضاف ${n}`,
     fMuscle:'العضلة', fEquip:'الأداة', all:'الكل', noMatch:'مفيش تمارين بالفلتر ده.',
@@ -1882,7 +1882,7 @@ const I18N = {
     discard:'Discard session', discardQ:'Discard this session? Everything logged in it will be deleted.',
     deleteSession:'Delete session', deleteSessionQ:'Delete this session from your history?',
     emptyFinishQ:'No sets logged. Discard this session?',
-    removeExQ:n=>`Remove “${n}”?`, saved:'Session saved 💪', deleted:'Deleted',
+    removeExQ:n=>`Remove “${n}”?`, saved:'Session saved 💪', autoClosed:'Session closed automatically (nothing logged for an hour), saved up to the last set', deleted:'Deleted',
     cancel:'Cancel', del:'Delete', yes:'Yes', remove:'Remove',
     search:'Search exercises', addCustom:n=>`+ Add “${n}”`, pickTitle:'Choose exercises', inSession:'added', addSel:n=>`Add ${n} exercise${n === 1 ? '' : 's'}`, pickHint:'Tap an exercise to select it, or ⓘ to see how to do it.', clearSel:'Clear', details:'Details', selectThis:'Select this exercise', unselectThis:'Remove from selection', backToList:'Back to list', addedN:n=>`Added ${n}`,
     fMuscle:'Muscle', fEquip:'Equipment', all:'All', noMatch:'No exercises match these filters.',
@@ -2047,8 +2047,47 @@ function applyRoutinePatches(p) {
     if (p.imgReview) for (const k of Object.keys(p.imgReview)) if (p.imgReview[k] && p.imgReview[k].v === 'ok') delete p.imgReview[k];
     done.add('img-ok-reset-1');
   }
+  // 2026-11-12 (Karim): drop the accidental custom exercise "Dog"; warm-up tags he used on working sets become normal sets
+  if (!done.has('cleanup-1')) {
+    p.custom = (p.custom || []).filter(c => !(c.id === 'c_mw7gkur6vu20r' && !(p.routines || []).some(r => r.items.some(i => i.exId === c.id))));
+    const FIX = { mvroabubh2yyo:['tbar_row'], mvroabubepnqw:['lat_pd', 'bench'], mvroabubxum96:['incline_db'] };
+    for (const r of p.routines || []) for (const it of r.items) if ((FIX[r.id] || []).includes(it.exId)) for (const x of it.sets) delete x.t;
+    done.add('cleanup-1');
+  }
   p.applied = [...done];
   return p;
+}
+/* 2026-11-12: one-time session fixes — warm-up tags on sets at working weight, and sessions left open for hours */
+function fixSessions() {
+  const p = S.profile; if (!p || (p.applied || []).includes('sess-fix-1')) return;
+  for (const s of S.sessions.values()) {
+    let ch = false;
+    for (const it of s.items) {
+      const work = it.sets.filter(x => x.t !== 'w' && x.w != null).map(x => x.w);
+      const top = work.length ? Math.max(...work) : null;
+      for (const x of it.sets) if (x.t === 'w' && top != null && x.w != null && x.w >= top) { delete x.t; ch = true; }
+    }
+    if (s.endedAt && s.endedAt - s.startedAt > 150 * 60000) { s.endedAt = s.startedAt + 90 * 60000; ch = true; }
+    if (ch) saveSession(s, 0);
+  }
+  p.applied = [...(p.applied || []), 'sess-fix-1']; saveProfile();
+}
+/* a live session with nothing logged for an hour is closed automatically, ending at its last logged set */
+const IDLE_MS = 60 * 60000;
+let idleCheckAt = 0;
+function autoCloseIdle() {
+  if (!S.loaded || Date.now() < idleCheckAt) return; idleCheckAt = Date.now() + 30000;
+  const a = activeSession(); if (!a) return;
+  if (!a.lastAt) { a.lastAt = Date.now(); saveSession(a); return; }  // sessions from before this check get a fresh hour
+  const last = a.lastAt;
+  if (Date.now() - last < IDLE_MS) return;
+  const items = a.items.map(it => ({ ...it, sets:it.sets.filter(x => x.done) })).filter(it => it.sets.length || it.note);
+  const viewing = S.view === 'session' && cur() && cur().id === a.id;
+  if (!items.some(it => it.sets.length)) { removeSession(a.id); }
+  else { a.items = items.map(({ _noteOpen, ...it }) => it); a.endedAt = Math.max(last, a.startedAt + 60000); saveSession(a, 0); }
+  if (timer.running) stopTimer();
+  if (viewing) { S.editId = null; wake(false); go('home'); } else render();
+  toast(t('autoClosed'));
 }
 function normalizeMeasure(m) {
   if (!m || !m.id || !m.at) return null;
@@ -2059,7 +2098,7 @@ function normalizeMeasure(m) {
 function normalizeSession(s) {
   if (!s || !s.id || !s.startedAt) return null;
   return {
-    id: s.id, startedAt: Number(s.startedAt), endedAt: s.endedAt ? Number(s.endedAt) : null,
+    id: s.id, startedAt: Number(s.startedAt), endedAt: s.endedAt ? Number(s.endedAt) : null, ...(s.lastAt ? { lastAt:Number(s.lastAt) } : {}),
     routineId: s.routineId || null, routineName: s.routineName || '', notes: s.notes || '',
     items: Array.isArray(s.items) ? s.items.filter(i => i && i.exId).map(i => ({
       exId:i.exId, note:i.note || '',
@@ -2310,6 +2349,7 @@ function useLocal() {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) { const d = JSON.parse(raw); S.profile = normalizeProfile(d.profile); for (const s of d.sessions || []) { const n = normalizeSession(s); if (n) S.sessions.set(n.id, n); } for (const m of d.measures || []) { const n = normalizeMeasure(m); if (n) S.measures.set(n.id, n); } }
   } catch { Store.mode = 'memory'; }
+  fixSessions();
   LANG = S.profile.lang; S.loaded = true; applyLang(); render();
 }
 async function initStore() {
@@ -2876,7 +2916,7 @@ async function finishSession() {
 
 function completeSet(s, i, j) {
   const it = s.items[i], x = it.sets[j];
-  x.done = true; delete x.pr;
+  x.done = true; delete x.pr; s.lastAt = Date.now();
   const pr = checkPR(s, it.exId, x);
   if (pr) { x.pr = pr.k; toast(t({ w:'prW', e:'prE', r:'prR', t:'prT' }[pr.k], pr.v)); }
   if (!s.endedAt) { const rs = restFor(it.exId); if (rs > 0) startTimer(rs, it.exId); }
@@ -2976,6 +3016,7 @@ function rsPaint() {
 }
 function stopTimer() { timer.running = false; timer.done = false; $('#timer')?.remove(); if (S.view !== 'session') placeLive(); }
 function tick() {
+  autoCloseIdle();
   const s = S.view === 'session' ? cur() : null;
   const el = $('#elapsed'); if (el && s && !s.endedAt) el.textContent = hmm(Date.now() - s.startedAt);
   const le = $('#liveEl'); if (le) { const a = activeSession(); if (a) le.textContent = hmm(Date.now() - a.startedAt); }
